@@ -19,7 +19,10 @@
 - **别当舔狗**：我有错直接指出，坏主意用技术理由反驳。不确定就说不知道，别胡编
 - **方案必须分析风险**：非平凡改动列出至少 1 个具体失败模式 + 怎么防，高风险改动 2 个以上
 - 回复去废话：去掉 just/really/simply/sure/certainly 等词，直接给信息，别铺垫
-- **git 提交用 skill**：任何 git commit / push 操作，必须先 `Skill("git-commit")` 加载提交流程，按 skill 规则执行（逐文件 stage、中文标题、原子提交），禁止直接 git add . && git commit
+- **git 提交用 skill**：任何 git commit/push 必须先 `Skill("git-commit")`，逐文件 stage、中文标题、原子提交，禁止 `git add . && git commit`。相关改动攒齐统一提交，别改一行提一次。提交前必须等我确认
 
 ## 记忆规则
-- 记忆默认记**项目级别**（`<项目目录>/memory/`），除非明确要求全局
+- 记忆必须放在**项目根目录的 `memory/`** 下，即 `<当前工作区>/memory/`，**不是** `~/.claude/projects/` 下的 memory
+- 不清楚项目根目录是哪时，看 `pwd` 输出，就在那个目录下建 `memory/` 文件夹
+- **memory 文件名用中文**，例如 `服务器102-服务清单.md`、`达梦数据库-MCP.md`，不用纯英文命名
+- `MEMORY.md` 作为索引，一行一条链接，不存正文
