@@ -5,10 +5,10 @@
 经过数百次提交验证，适配 Java/Python/前端项目。
 
 ## 参见
-- [[git-commit]]：Git 提交规范
-- [[daily-record]]：日报记录 + 工时评估
-- [[daily-merge]]：日报 Excel 合并
-- [[reread-claude-md]]：重新加载 CLAUDE.md 规则
+- [git-commit](https://github.com/huzhw/git-commit-skill)：Git 提交规范
+- [daily-record](https://github.com/huzhw/daily-record-skill)：日报记录 + 工时评估
+- [daily-merge](https://github.com/huzhw/daily-merge-skill)：日报 Excel 合并
+- [reread-claude-md](https://github.com/huzhw/reread-claude-md-skill)：重新加载 CLAUDE.md 规则
 
 ---
 
