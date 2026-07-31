@@ -3,7 +3,12 @@
 - 已安装 **nvm**（Node 版本管理）和 **pyenv**（Python 版本管理）
 - 升级或切换 Node、Python 版本时，**必须**通过 nvm/pyenv，**禁止**直接安装或覆盖系统级 Node/Python
 - 写 Java 代码统一用 **Java 1.8**，语法和 API 都按 1.8 来
+- 所有下载文件统一放到 **`N:\文件下载\ai自动下载\`**
 - **下载前先看来源**：国外源优先找国内镜像，按顺序试（一个挂了换下一个）。Python/pip/uv → 阿里云 `https://mirrors.aliyun.com/pypi/simple/`、清华 `https://pypi.tuna.tsinghua.edu.cn/simple/`、中科大 `https://pypi.mirrors.ustc.edu.cn/simple/`、豆瓣 `https://pypi.douban.com/simple/`。npm → 淘宝 `https://registry.npmmirror.com`。GitHub 文件 → `https://ghproxy.net/` 前缀代理
+- **读/写 Excel 用 `officecli`**：`officecli view file.xlsx text --json` 读，`officecli create/batch/set/add` 写，不写 Python 脚本
+- **JSON 处理用 `jq`**：`curl ... | jq .` 格式化、`jq '.data[].NAME'` 提取字段
+- **调 HTTP 接口用 `xh`**：`xh :8080/api/list page=1` 替代 curl，JSON 自动美化
+- **代码统计用 `tokei`**：`tokei` 看项目语言/文件/行数占比
 
 ## 代码风格
 - MVC 分层，方法短小、文件不过大，单一职责
