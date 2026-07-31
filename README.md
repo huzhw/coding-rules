@@ -1,11 +1,5 @@
 # coding-rules
 
-一套实战检验过的 AI 编码协作规范，解决 AI 写代码"手快脑子快但缺乏判断力"的问题。
-
-经过数百次提交验证，适配 Java/Python/前端项目。
-
-> **"亲爱的架构师"不是客套——是上下文压缩探针。** AI 长对话中上下文逐步压缩，CLAUDE.md 规则会丢。AI 漏了这句开头 = 规则丢了 = 说"规则丢了"触发 [reread-claude-md](https://github.com/huzhw/reread-claude-md-skill) 重载。
-
 ## 相关技能
 - [git-commit](https://github.com/huzhw/git-commit-skill)：Git 提交规范
 - [daily-record](https://github.com/huzhw/daily-record-skill)：日报记录 + 工时评估
@@ -14,6 +8,12 @@
 - [token-3000](https://github.com/huzhw/token-3000-skill)：API Token 一键切换
 
 ---
+
+一套实战检验过的 AI 编码协作规范，解决 AI 写代码"手快脑子快但缺乏判断力"的问题。
+
+经过数百次提交验证，适配 Java/Python/前端项目。
+
+> **"亲爱的架构师"不是客套——是上下文压缩探针。** AI 长对话中上下文逐步压缩，CLAUDE.md 规则会丢。AI 漏了这句开头 = 规则丢了 = 说"规则丢了"触发 [reread-claude-md](https://github.com/huzhw/reread-claude-md-skill) 重载。
 
 ## 快速开始
 
