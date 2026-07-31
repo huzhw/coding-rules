@@ -6,6 +6,7 @@
 - [daily-merge](https://github.com/huzhw/daily-merge-skill)：日报 Excel 合并
 - [reread-claude-md](https://github.com/huzhw/reread-claude-md-skill)：重新加载 CLAUDE.md 规则
 - [token-3000](https://github.com/huzhw/token-3000-skill)：API Token 一键切换
+- [service-manager](https://github.com/huzhw/service-manager)：桌面服务管理工具
 
 ---
 
@@ -218,15 +219,6 @@ AI：不安全。cookie 明文传输，密码应该只在登录请求体中传�
 | 话多且废 | 满屏 just/really/simply | 去废话 |
 | N+1 查库 | 循环里逐条 SQL | 批量查 → 内存处理 |
 | 手贱 | 改 A 顺手把 BC 也优化了 | 只改任务要求的 |
-
-## 相关仓库
-
-- [service-manager](https://github.com/huzhw/service-manager) — JavaFX 桌面服务管理工具
-- [git-commit](https://github.com/huzhw/git-commit-skill) — Git 提交规范
-- [daily-record](https://github.com/huzhw/daily-record-skill) — 日报需求记录
-- [daily-merge](https://github.com/huzhw/daily-merge-skill) — 日报 Excel 合并
-- [reread-claude-md](https://github.com/huzhw/reread-claude-md-skill) — CLAUDE.md 规则重载
-- [token-3000](https://github.com/huzhw/token-3000-skill) — API Token 一键切换
 
 ## 许可
 
