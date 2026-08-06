@@ -7,6 +7,7 @@
 - [reread-claude-md](https://github.com/huzhw/reread-claude-md-skill)：重新加载 CLAUDE.md 规则
 - [token-3000](https://github.com/huzhw/token-3000-skill)：API Token 一键切换
 - [service-manager](https://github.com/huzhw/service-manager)：桌面服务管理工具
+- [code-check](https://github.com/huzhw/code-check-skill)：增量代码隐患检查
 
 ---
 
