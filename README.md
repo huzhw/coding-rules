@@ -216,7 +216,7 @@ AI：不安全。cookie 明文传输，密码应该只在登录请求体中传�
 
 | 脚本 | 事件（matcher） | 作用 |
 |------|----------------|------|
-| `block-amper-and.sh` | PreToolUse（Bash） | 禁止 `&&` 串联命令，必须拆成多个独立 Bash 调用 |
+| `block-amper-and.sh` | PreToolUse（Bash） | 禁止 `&&` 串联命令，必须拆成多个独立 Bash 调用（引号内的 `&&` 视为文本放行） |
 | `block-dangerous-git.sh` | PreToolUse（Bash） | git 危险操作拦截：reset --hard、clean、branch -D、checkout/restore .、push --force，及 `git add .`/`-A`/`-a`/`--all` 全部暂存 |
 | `warn-download-location.sh` | PostToolUse（Bash） | 下载落盘提醒：curl/wget/xh 带 `-o`/`--output` 且目标不在 `N:\文件下载\ai自动下载\` 时提醒（仅提醒不拦截） |
 | `guard-memory-write.sh` | PreToolUse（Write\|Edit\|MultiEdit） | 写 `memory/` 前把关：用户区 ask、AI 区新文件 ask、命名不合规 deny、已批准放行 |
