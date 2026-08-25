@@ -205,6 +205,8 @@ AI：不安全。cookie 明文传输，密码应该只在登录请求体中传�
 ## 记忆规则
 
 - 项目相关记忆默认存项目级别（`<项目>/memory/`）
+- AI 自动记录写 `<项目>/memory/ai/` 子目录；项目根 `memory/` 只放用户主动记录，用户区文件 AI 只读不改
+- AI 自动记录（`memory/ai/`）不提交 git，项目 `.gitignore` 排除；`memory/ai/` 有自己的 `MEMORY.md` 索引
 - 全局通用事实存用户级别（`~/.claude/memory/`）
 - 不在代码库里存 AI 临时文件
 
