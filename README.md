@@ -210,6 +210,24 @@ AI：不安全。cookie 明文传输，密码应该只在登录请求体中传�
 - 全局通用事实存用户级别（`~/.claude/memory/`）
 - 不在代码库里存 AI 临时文件
 
+## 记忆写入守卫（hook）
+
+防止 AI 幻觉乱写记忆文件。两个脚本在本仓库 `hooks/` 下：
+
+| 脚本 | 事件（matcher） | 作用 |
+|------|----------------|------|
+| `guard-memory-write.sh` | PreToolUse（Write\|Edit\|MultiEdit） | 写 `memory/` 前把关：用户区 ask、AI 区新文件 ask、命名不合规 deny、已批准放行 |
+| `guard-memory-approved.sh` | PostToolUse（Write\|Edit\|MultiEdit） | 写入 `memory/ai/` 成功后记入批准台账 `~/.claude/memory-ai-approved.txt`，后续不再打扰 |
+
+接入全局 `~/.claude/settings.json`（脚本需复制到 `~/.claude/hooks/`）：
+
+```json
+"hooks": {
+  "PreToolUse": [{ "matcher": "Write|Edit|MultiEdit", "hooks": [{ "type": "command", "command": "\"$HOME\"/.claude/hooks/guard-memory-write.sh", "timeout": 30 }] }],
+  "PostToolUse": [{ "matcher": "Write|Edit|MultiEdit", "hooks": [{ "type": "command", "command": "\"$HOME\"/.claude/hooks/guard-memory-approved.sh", "timeout": 30 }] }]
+}
+```
+
 ## 为什么需要这套规范
 
 默认 AI 编码助手有几个通病：
