@@ -2,10 +2,10 @@
 
 ## 相关技能
 - [git-commit](https://github.com/huzhw/git-commit-skill)：Git 提交规范
-- [daily-record](https://github.com/huzhw/daily-record-skill)：日报记录 + 工时评估
-- [daily-merge](https://github.com/huzhw/daily-merge-skill)：日报 Excel 合并
-- [reread-claude-md](https://github.com/huzhw/reread-claude-md-skill)：重新加载 CLAUDE.md 规则
-- [token-3000](https://github.com/huzhw/token-3000-skill)：API Token 一键切换
+- [daily-record-gitlab-md](https://github.com/huzhw/daily-record-gitlab-md-skill)：日报记录 + 工时评估
+- [daily-merge-gitlab-excel](https://github.com/huzhw/daily-merge-gitlab-excel-skill)：日报 Excel 合并
+- [reread-rules](https://github.com/huzhw/reread-rules-skill)：重载 CLAUDE.md / AGENTS.md 规则
+- [claude-code-token-3000](https://github.com/huzhw/claude-code-token-3000-skill)：API Token 一键切换
 - [service-manager](https://github.com/huzhw/service-manager)：桌面服务管理工具
 - [code-check](https://github.com/huzhw/code-check-skill)：增量代码隐患检查
 
