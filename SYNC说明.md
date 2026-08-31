@@ -97,7 +97,40 @@ powershell -File scripts\sync-rules.ps1 -Push
 
 ---
 
-## 三、维护节奏（推荐）
+## 三、hooks 脚本分发模型（2026-08-31 新增）
+
+四端工具的防护钩子（危险命令拦截、记忆守卫、下载提醒）**能力对齐、实现各异**：
+
+### 事实源与分发链
+
+| 层 | 位置 | 说明 |
+|---|---|---|
+| **事实源** | `F:\idea-workspase-skills\coding-rules\hooks\`（6 脚本，git 管理） | 改防护逻辑**只改这里** |
+| Claude Code | `~\.claude\hooks\`（分发副本） | `~\.claude\settings.json` hooks 段加载 |
+| Zcode | 引用 `~\.claude\hooks\` 同一路径 | `~\.zcode\settings.json` hooks 段，与 Claude 共用脚本 |
+| Codex | `~\.codex\hooks\guard-memory-write-codex.sh`、`guard-memory-approved-codex.sh`（**专用适配版**，适配 apply_patch 工具与 Codex 输出格式）；Bash 拦截直接引用 `~\.claude\hooks\` 两脚本 | `~\.codex\config.toml` 的 `[[hooks.*]]` 段，需 `[features] hooks = true` |
+
+**6 个通用脚本**：block-dangerous-git.sh、block-amper-and.sh、guard-dangerous-bash.sh、guard-memory-write.sh、guard-memory-approved.sh、warn-download-location.sh
+
+### 分发方式与维护规则
+
+- 通用脚本是**手动复制分发**（改完事实源后 copy 到 `~\.claude\hooks\`），**不是链接**——改脚本后必须同步复制，否则 Claude/Zcode/Codex 用旧版
+- Codex 适配版只存在于 `~\.codex\hooks\`（Codex 的 apply_patch 工具名与输入输出格式与 Claude 不同，拦截输出需 JSON 转义适配）；改它们不涉及其他端
+- 脚本改动走 coding-rules 仓库 git 提交；`~\.codex\hooks\` 不入 git
+- Codex 的 `config.toml` 里每条 hook 命令有 `trusted_hash` 登记，**hook 命令文本变更后 Codex 会要求重新信任**，属正常机制
+
+### 各端加载点速查
+
+| 端 | 配置文件 | 挂载内容 |
+|---|---|---|
+| Claude Code | `~\.claude\settings.json` → `hooks` | PreToolUse：Bash×3（危险 git / && / 危险 bash）、Write\|Edit 记忆守卫；PostToolUse：记忆台账、下载提醒；Stop/SessionEnd：tokentracker 通知 |
+| Zcode | `~\.zcode\settings.json` → `hooks` | 同 Claude（不含 rtk、不含 tokentracker） |
+| Codex | `~\.codex\config.toml` → `[[hooks.PreToolUse/PostToolUse]]` | Bash 前置×2、apply_patch 前后置记忆守卫；`notify` 已接 tokentracker |
+| DSH | 无 hooks 机制，等价物见 `agent-config-sync-check\HOOKS说明.md` | rules.yaml 规则 + 内置基线 + dsh-permission-rules / dsh-auto-review / dsh-defend / dsh-notification 四插件 |
+
+---
+
+## 四、维护节奏（推荐）
 
 | 操作 | 怎么做 |
 |---|---|
@@ -108,7 +141,7 @@ powershell -File scripts\sync-rules.ps1 -Push
 
 ---
 
-## 四、回滚/重建方法
+## 五、回滚/重建方法
 
 ### skills junction 回滚（恢复独立副本）
 ```bat
@@ -130,6 +163,6 @@ mklink /H "C:\Users\Administrator\.zcode\AGENTS.md" "C:\Users\Administrator\.cla
 
 ---
 
-## 五、为什么 coding-rules 没有 JUNCTION说明.md
+## 六、为什么 coding-rules 没有 JUNCTION说明.md
 
 其他 7 个技能仓库都建了 junction，所以各自写 `JUNCTION说明.md` 记录“全局谁→F 仓库谁”。coding-rules 是**内容源仓库**，自身不在任何全局目录里（不是 junction 目标），它的分发机制是上面这套 **skills junction + 规则硬链接组**，所以用本说明替代原来的 JUNCTION 模板。
