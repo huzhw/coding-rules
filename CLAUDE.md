@@ -1,3 +1,5 @@
+<!-- 本文件是 ~/.claude/CLAUDE.md 的硬链接入口：dsh 用户级只认 AGENTS.md 这个文件名，因此以链接方式引用 Claude Code 的原始规则；两份路径指向同一份内容，修改任一端都会同步。 -->
+
 ## 环境约束
 - 所有代码统一用 **IntelliJ IDEA 2026.1** 编写
 - 已安装 **nvm**（Node 版本管理）和 **pyenv**（Python 版本管理）
