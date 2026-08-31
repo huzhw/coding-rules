@@ -32,6 +32,12 @@ INPUT=$(cat)
 COMMAND=$(printf '%s' "$INPUT" | jq -r '.tool_input.command // empty')
 [ -z "$COMMAND" ] && printf '{"continue":true}' && exit 0
 
+# ---- JSON 转义：deny 的 reason 嵌入动态值（反斜杠/双引号）会产出非法 JSON，Codex 解析失败即不拦截 ----
+# 所有进入 reason 的动态值（RM_TARGET / cmd）必须先经 json_escape 再放入格式串
+json_escape() {
+  printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'
+}
+
 # ---- 引号感知：剥掉单/双/反引号内的内容，只留"引号外"命令骨架 ----
 # 与 block-amper-and.sh 保持同一套引号状态机，保证与现有 hook 判定一致。
 STRIPPED=$(printf '%s' "$COMMAND" | awk '
@@ -72,7 +78,7 @@ if printf '%s' "$STRIPPED" | grep -qE '(^|[[:space:]]|/)rm([[:space:]]|$).*(-[a-
   RM_TARGET_LC=$(printf '%s' "$RM_TARGET" | tr '[:upper:]' '[:lower:]')
   RM_TARGET_LC=${RM_TARGET_LC%/}
   if [ -z "$RM_TARGET_LC" ] || printf '%s' "$RM_TARGET_LC" | grep -qE '^(\.\.|/|[a-z]:|~)'; then
-    printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"危险命令（P0 删除类）被拦截：rm 目标 %s 为空或为绝对/上级路径，禁止执行。"}}' "$RM_TARGET"
+    printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"危险命令（P0 删除类）被拦截：rm 目标 %s 为空或为绝对/上级路径，禁止执行。"}}' "$(json_escape "$RM_TARGET")"
     exit 0
   fi
   # 白名单：项目内构建/缓存/输出目录 → 放行
@@ -81,7 +87,7 @@ if printf '%s' "$STRIPPED" | grep -qE '(^|[[:space:]]|/)rm([[:space:]]|$).*(-[a-
     exit 0
   fi
   # 其余（未列入白名单的相对/绝对路径）一律 deny
-  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"危险命令（P0 删除类）被拦截：rm 目标 %s 不在构建/缓存/输出白名单，且非本次确认的安全操作。如需删除请精确指定已确认的路径。"}}' "$RM_TARGET"
+  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"危险命令（P0 删除类）被拦截：rm 目标 %s 不在构建/缓存/输出白名单，且非本次确认的安全操作。如需删除请精确指定已确认的路径。"}}' "$(json_escape "$RM_TARGET")"
   exit 0
 fi
 if printf '%s' "$STRIPPED" | grep -qE 'find[[:space:]].*-(delete|-exec|-ok)([[:space:]]|$)'; then
@@ -92,7 +98,7 @@ fi
 # ---- DANGER P1: 系统状态变更（可逆的运维命令不在本清单） ----
 for cmd in 'reg[[:space:]]+delete' 'sc[[:space:]]+delete' 'shutdown[[:space:]]*$|shutdown[[:space:]]+.*-r' '(^|[[:space:]])reboot([[:space:]]|$)|reboot$' 'bcdedit'; do
   if printf '%s' "$STRIPPED" | grep -qiE "$cmd"; then
-    printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"危险命令（P1 系统状态变更）被拦截：命中 %s。系统级变更请人工在服务器上操作。"}}' "$cmd"
+    printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"危险命令（P1 系统状态变更）被拦截：命中 %s。系统级变更请人工在服务器上操作。"}}' "$(json_escape "$cmd")"
     exit 0
   fi
 done

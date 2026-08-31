@@ -44,5 +44,9 @@ HAS_CHAIN=$(printf '%s' "$COMMAND" | awk '
 
 [ -z "$HAS_CHAIN" ] && exit 0
 
-echo "BLOCKED: 禁止 && 串联命令，改为多个独立 Bash 调用分开执行。命令: $COMMAND" >&2
-exit 2
+json_escape() {
+  printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'
+}
+
+printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s%s"}}' "禁止 && 串联命令，改为多个独立 Bash 调用分开执行。命令: " "$(json_escape "$COMMAND")"
+exit 0
