@@ -1,5 +1,20 @@
 # coding-rules
 
+## 📌 五目录同步说明
+
+本仓库作为**内容源**统一向 5 个用户级目录分发：`.claude` / `.zcode` / `.codex` / `.dsh`（C 盘，硬链接组 + junction）+ 本仓库自身（F 盘）。自研技能 14 个已全部直连 F 仓库；规则文件为 C 盘硬链接组 + F 源。
+
+**完整同步模型、脚本用法、回滚方法见 [SYNC说明.md](SYNC说明.md)**。常用：
+
+```powershell
+# 校验/重建技能 junction
+powershell -File scripts\sync-skills.ps1 [-Fix]
+
+# 推送规则到 C 盘 / 检查一致性
+powershell -File scripts\sync-rules.ps1 -Push
+powershell -File scripts\sync-rules.ps1 -Check
+```
+
 ## 相关技能
 - [git-commit](https://github.com/huzhw/git-commit-skill)：Git 提交规范
 - [daily-record-gitlab-md](https://github.com/huzhw/daily-record-gitlab-md-skill)：日报记录 + 工时评估
