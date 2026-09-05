@@ -69,9 +69,10 @@ if ($Push) {
     $tmp = "$CFile.tmp"
     Copy-Item -LiteralPath $F_MAIN -Destination $tmp -Force
     # 触发硬链接组其余文件更新：先删底座再复制替换会破坏组关联。
-    # 正确方式：用 Set-Content 写底座，硬链接组同 inode 其它成员同步变化。
+    # 正确方式：原地写底座（WriteAllText 截断写同 inode），硬链接组其它成员同步变化。
+    # 注意：必须无 BOM 写入（PS5.1 的 Set-Content -Encoding UTF8 会烙 BOM，导致与 F 源 MD5 永远对不齐）。
     $content = Get-Content -LiteralPath $tmp -Raw -Encoding UTF8
-    Set-Content -LiteralPath $CFile -Value $content -Encoding UTF8 -NoNewline
+    [System.IO.File]::WriteAllText($CFile, $content, (New-Object System.Text.UTF8Encoding($false)))
     Remove-Item -LiteralPath $tmp -Force
     Write-Host "[推送完成] C 盘组已同步 F 仓库内容" -ForegroundColor Green
 }
