@@ -1,10 +1,12 @@
-<!-- 本文件是 ~/.claude/CLAUDE.md 的手工同步副本（唯一一个：C: 与 F: 跨卷无法建硬链接）。
-     ~/.dsh、~/.zcode、~/.codex 三端的 AGENTS.md 与 ~/.claude/CLAUDE.md 同属一个硬链接组（4 个名字同一 inode），改动互见。
-     硬链接组的坑：编辑工具"替换写"会拆链（2026-09-05 实踩）——改完全局规则后重建两步：
-       ① Copy-Item 组源覆盖三端 AGENTS.md（内容收敛）
-       ② 跑 agent-config-sync-check 的 sync-check.ps1 -FixHardlink（SHA256 四端全等才重建，分叉拒绝）
-     本文件不受拆链影响；全局规则改动后 Copy-Item 同步到本文件——忘了也不怕，
-     检查项 13 会报 RulesCopyDrift，跑 sync-check.ps1 -Fix 自动重写正文并保留本头注释。 -->
+<!-- 规则同步体系（F 盘为唯一内容源）：
+     ① 唯一内容源 = F:\idea-workspase-skills\coding-rules\CLAUDE.md（git 仓库，改动只改这里）
+     ② C 盘 4 个规则文件 = 单向硬链接组（.claude\CLAUDE.md + .codex/.dsh/.zcode 三处 AGENTS.md，
+        同 inode 改动互见），由 coding-rules\scripts\sync-rules.ps1 -Push 从 F 整文件推入（无 BOM UTF8）
+     ③ 硬链接组的坑：编辑工具"替换写"会拆链（2026-09-05 实踩）——修复用 agent-config-sync-check
+        的 sync-check.ps1 -FixHardlink（SHA256 四端全等才重建，分叉拒绝）
+     ④ agent-config-sync-check 检查项 13（RulesCopyDrift）看管 F↔C 正文漂移，-Fix 只重写正文、保留本头注释
+     ⑤ 维护顺序（红线）：改 F → git commit/push → sync-rules.ps1 -Push → 再跑任何 sync-check。
+        禁止直接改 C 盘组（会被下次 -Push 覆盖） -->
 
 ## 环境约束
 - 所有代码统一用 **IntelliJ IDEA 2026.1** 编写
