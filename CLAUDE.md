@@ -1,9 +1,14 @@
-<!-- 本文件是 ~/.claude/CLAUDE.md 的硬链接入口：dsh 用户级只认 AGENTS.md 这个文件名，因此以链接方式引用 Claude Code 的原始规则；两份路径指向同一份内容，修改任一端都会同步。 -->
+<!-- 本文件是 ~/.claude/CLAUDE.md 的手工同步副本（唯一一个：C: 与 F: 跨卷无法建硬链接）。
+     ~/.dsh、~/.zcode、~/.codex 三端的 AGENTS.md 与 ~/.claude/CLAUDE.md 同属一个硬链接组（4 个名字同一 inode），改动互见。
+     硬链接组的坑：编辑工具"替换写"会拆链（2026-09-05 实踩）——改完全局规则必须重建：
+       删三端 AGENTS.md 后 fsutil hardlink create <AGENTS.md路径> "C:\Users\Administrator\.claude\CLAUDE.md" ×3，
+       重跑 agent-config-sync-check 的 sync-check.ps1 应 ALL GREEN（报 HardlinkBroken 即组已断）。
+     本文件不受拆链影响，但全局规则每次改动后必须 Copy-Item 覆盖同步到本文件。 -->
 
 ## 环境约束
 - 所有代码统一用 **IntelliJ IDEA 2026.1** 编写
-- 已安装 **nvm**（Node 版本管理）、**pyenv**（Python 版本管理）和 **g**（Go 版本管理）
-- 升级或切换 Node、Python、Go 版本时，**必须**通过 nvm/pyenv/g，**禁止**直接安装或覆盖系统级 Node/Python/Go
+- 已安装 **nvm**（Node 版本管理）、**pyenv**（Python 版本管理）、**g**（Go 版本管理）和 **rustup**（Rust 版本管理）
+- 升级或切换 Node、Python、Go、Rust 版本时，**必须**通过 nvm/pyenv/g/rustup，**禁止**直接安装或覆盖系统级 Node/Python/Go/Rust
 - 写 Java 代码统一用 **Java 1.8**，语法和 API 都按 1.8 来
 - 所有下载文件统一放到 **`N:\文件下载\ai自动下载\`**
 - **下载前先看来源**：国外源优先找国内镜像，按顺序试（一个挂了换下一个）。Python/pip/uv → 阿里云 `https://mirrors.aliyun.com/pypi/simple/`、清华 `https://pypi.tuna.tsinghua.edu.cn/simple/`。npm → 淘宝 `https://registry.npmmirror.com`。GitHub 文件 → `https://ghproxy.net/` 前缀代理
