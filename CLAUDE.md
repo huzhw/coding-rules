@@ -1,9 +1,10 @@
 <!-- 本文件是 ~/.claude/CLAUDE.md 的手工同步副本（唯一一个：C: 与 F: 跨卷无法建硬链接）。
      ~/.dsh、~/.zcode、~/.codex 三端的 AGENTS.md 与 ~/.claude/CLAUDE.md 同属一个硬链接组（4 个名字同一 inode），改动互见。
-     硬链接组的坑：编辑工具"替换写"会拆链（2026-09-05 实踩）——改完全局规则必须重建：
-       删三端 AGENTS.md 后 fsutil hardlink create <AGENTS.md路径> "C:\Users\Administrator\.claude\CLAUDE.md" ×3，
-       重跑 agent-config-sync-check 的 sync-check.ps1 应 ALL GREEN（报 HardlinkBroken 即组已断）。
-     本文件不受拆链影响，但全局规则每次改动后必须 Copy-Item 覆盖同步到本文件。 -->
+     硬链接组的坑：编辑工具"替换写"会拆链（2026-09-05 实踩）——改完全局规则后重建两步：
+       ① Copy-Item 组源覆盖三端 AGENTS.md（内容收敛）
+       ② 跑 agent-config-sync-check 的 sync-check.ps1 -FixHardlink（SHA256 四端全等才重建，分叉拒绝）
+     本文件不受拆链影响；全局规则改动后 Copy-Item 同步到本文件——忘了也不怕，
+     检查项 13 会报 RulesCopyDrift，跑 sync-check.ps1 -Fix 自动重写正文并保留本头注释。 -->
 
 ## 环境约束
 - 所有代码统一用 **IntelliJ IDEA 2026.1** 编写
@@ -11,7 +12,7 @@
 - 升级或切换 Node、Python、Go、Rust 版本时，**必须**通过 nvm/pyenv/g/rustup，**禁止**直接安装或覆盖系统级 Node/Python/Go/Rust
 - 写 Java 代码统一用 **Java 1.8**，语法和 API 都按 1.8 来
 - 所有下载文件统一放到 **`N:\文件下载\ai自动下载\`**
-- **下载前先看来源**：国外源优先找国内镜像，按顺序试（一个挂了换下一个）。Python/pip/uv → 阿里云 `https://mirrors.aliyun.com/pypi/simple/`、清华 `https://pypi.tuna.tsinghua.edu.cn/simple/`。npm → 淘宝 `https://registry.npmmirror.com`。GitHub 文件 → `https://ghproxy.net/` 前缀代理
+- **下载前先看来源**：国外源优先找国内镜像，按顺序试（一个挂了换下一个）。Python/pip/uv → 阿里云 `https://mirrors.aliyun.com/pypi/simple/`、清华 `https://pypi.tuna.tsinghua.edu.cn/simple/`。npm → 淘宝 `https://registry.npmmirror.com`。Rust rustup → 清华 `https://mirrors.tuna.tsinghua.edu.cn/rustup/`、cargo → rsproxy `https://rsproxy.cn/`。GitHub 文件 → `https://ghproxy.net/` 前缀代理
 - **查数据库统一用 DBX MCP**：所有数据库操作（达梦/MySQL/Oracle/PostgreSQL/Kingbase）通过全局 DBX MCP 的 `dbx_*` 系列工具执行，连接已在 DBX 桌面端（`D:\tools\DBX\dbx.exe`）配置好。禁止在各项目 `.mcp.json` 里单独配数据库 MCP
 - **读/写 Excel 用 `officecli`**：`officecli view file.xlsx text --json` 读，`officecli create/batch/set/add` 写，不写 Python 脚本
 - **JSON 处理用 `jq`**：`curl ... | jq .` 格式化、`jq '.data[].NAME'` 提取字段
