@@ -27,7 +27,6 @@
 | `code-recheck-today` | `F:\idea-workspase-skills\code-check\code-recheck-today` |
 | `code-recheck-yesterday` | `F:\idea-workspase-skills\code-check\code-recheck-yesterday` |
 | `code-recheck-from` | `F:\idea-workspase-skills\code-check\code-recheck-from` |
-| `claude-code-token-3000` | `F:\idea-workspase-skills\claude-code-token-3000` |
 | `daily-merge-gitlab-excel` | `F:\idea-workspase-skills\daily-merge-gitlab-excel` |
 | `daily-record-gitlab-md` | `F:\idea-workspase-skills\daily-record-gitlab-md` |
 | `deepseek-harness-settings-curator` | `F:\idea-workspase-skills\deepseek-harness-settings-curator` |

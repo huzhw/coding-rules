@@ -66,7 +66,6 @@ $Map = @(
     @{ Name = "code-recheck-yesterday";            Target = "$F_ROOT\code-check\code-recheck-yesterday" },
     @{ Name = "code-recheck-from";                 Target = "$F_ROOT\code-check\code-recheck-from" },
     # 其他单技能
-    @{ Name = "claude-code-token-3000";            Target = "$F_ROOT\claude-code-token-3000" },
     @{ Name = "daily-merge-gitlab-excel";          Target = "$F_ROOT\daily-merge-gitlab-excel" },
     @{ Name = "daily-record-gitlab-md";            Target = "$F_ROOT\daily-record-gitlab-md" },
     @{ Name = "deepseek-harness-settings-curator"; Target = "$F_ROOT\deepseek-harness-settings-curator" },
