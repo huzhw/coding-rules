@@ -8,7 +8,7 @@
 #       · MEMORY.md 索引           → 放行
 #       · 命名不合规（无 -YYYY-MM-DD 日期后缀）→ deny
 #       · 已批准台账中的文件       → 放行（不重复打扰）
-#       · 新文件（未批准）         → ask 人工确认（防幻觉）
+#       · 新文件（未批准）         → 放行（AI 区首次写入免确认）
 #   - 非 memory/ 目录段            → 放行
 #
 # 配套：guard-memory-approved.sh（PostToolUse）负责把写入成功的
@@ -53,6 +53,6 @@ if [ -f "$APPROVED" ] && grep -qxF "$NORM" "$APPROVED" 2>/dev/null; then
   exit 0
 fi
 
-# 新记录 → ask 人工确认（防幻觉）
-printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"ask","permissionDecisionReason":"AI 自动记录待确认（防幻觉）：%s。确认内容真实可考再批准，否则拒绝。"}}' "$BASE"
+# 新记录直接放行（2026-09-12 调整：AI 区写入免人工确认，
+# 把关靠命名 deny + 晋升机制人工过目兜底）
 exit 0
