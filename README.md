@@ -23,6 +23,7 @@ powershell -File scripts\sync-rules.ps1 -Check
 - [service-manager](https://github.com/huzhw/service-manager)：桌面服务管理工具
 - [code-check](https://github.com/huzhw/code-check-skill)：增量代码隐患检查
 - [deepseek-harness-settings-curator](https://github.com/huzhw/deepseek-harness-settings-curator)：DSH 模型配置梳理
+- [deepseek-harness-plugin-doctor](https://github.com/huzhw/deepseek-harness-plugin-doctor)：DSH 插件与升级体检医生
 - [agent-config-sync-check](https://github.com/huzhw/agent-config-sync-check)：四端同步守卫：链接/硬链接/README 同步检查与修复
 
 ---
