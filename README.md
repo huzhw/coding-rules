@@ -233,7 +233,6 @@ AI：不安全。cookie 明文传输，密码应该只在登录请求体中传�
 
 | 脚本 | 事件（matcher） | 作用 |
 |------|----------------|------|
-| `block-amper-and.sh` | PreToolUse（Bash） | 禁止 `&&` 串联命令，必须拆成多个独立 Bash 调用（引号内的 `&&` 视为文本放行） |
 | `block-dangerous-git.sh` | PreToolUse（Bash） | git 危险操作拦截：reset --hard、clean、branch -D、checkout/restore .、push --force，及 `git add .`/`-A`/`-a`/`--all` 全部暂存 |
 | `guard-dangerous-bash.sh` | PreToolUse（Bash） | 危险 Bash 命令拦截（不依赖权限模式）：rm 指向非构建/缓存白名单、reg delete、sc delete、shutdown/reboot、bcdedit、DROP/TRUNCATE、无 WHERE 的 DELETE/UPDATE、chmod -R 777/chown -R、find -delete/-exec、mkfs/fdisk/fork bomb 一律 deny；taskkill /f、net stop/start、sc stop/start 放行；rm 指向 target/node_modules/dist/__pycache__ 等构建缓存目录放行 |
 | `warn-download-location.sh` | PostToolUse（Bash） | 下载落盘提醒：curl/wget/xh 带 `-o`/`--output` 且目标不在 `N:\文件下载\ai自动下载\` 时提醒（仅提醒不拦截） |
@@ -247,8 +246,7 @@ AI：不安全。cookie 明文传输，密码应该只在登录请求体中传�
   "PreToolUse": [
     { "matcher": "Bash", "hooks": [
       { "type": "command", "command": "\"$HOME\"/.claude/hooks/block-dangerous-git.sh", "timeout": 600 },
-      { "type": "command", "command": "\"$HOME\"/.claude/hooks/guard-dangerous-bash.sh", "timeout": 600 },
-      { "type": "command", "command": "\"$HOME\"/.claude/hooks/block-amper-and.sh", "timeout": 30 }
+      { "type": "command", "command": "\"$HOME\"/.claude/hooks/guard-dangerous-bash.sh", "timeout": 600 }
     ]},
     { "matcher": "Write|Edit|MultiEdit", "hooks": [
       { "type": "command", "command": "\"$HOME\"/.claude/hooks/guard-memory-write.sh", "timeout": 30 }

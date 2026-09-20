@@ -39,7 +39,6 @@ json_escape() {
 }
 
 # ---- 引号感知：剥掉单/双/反引号内的内容，只留"引号外"命令骨架 ----
-# 与 block-amper-and.sh 保持同一套引号状态机，保证与现有 hook 判定一致。
 STRIPPED=$(printf '%s' "$COMMAND" | awk '
 {
   n = length($0)

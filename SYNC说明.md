@@ -104,12 +104,12 @@ powershell -File scripts\sync-rules.ps1 -Push
 
 | 层 | 位置 | 说明 |
 |---|---|---|
-| **事实源** | `F:\idea-workspase-skills\coding-rules\hooks\`（6 脚本，git 管理） | 改防护逻辑**只改这里** |
+| **事实源** | `F:\idea-workspase-skills\coding-rules\hooks\`（5 脚本，git 管理） | 改防护逻辑**只改这里** |
 | Claude Code | `~\.claude\hooks\`（分发副本） | `~\.claude\settings.json` hooks 段加载 |
 | Zcode | 引用 `~\.claude\hooks\` 同一路径 | `~\.zcode\settings.json` hooks 段，与 Claude 共用脚本 |
 | Codex | `~\.codex\hooks\guard-memory-write-codex.sh`、`guard-memory-approved-codex.sh`（**专用适配版**，适配 apply_patch 工具与 Codex 输出格式）；Bash 拦截直接引用 `~\.claude\hooks\` 两脚本 | `~\.codex\config.toml` 的 `[[hooks.*]]` 段，需 `[features] hooks = true` |
 
-**6 个通用脚本**：block-dangerous-git.sh、block-amper-and.sh、guard-dangerous-bash.sh、guard-memory-write.sh、guard-memory-approved.sh、warn-download-location.sh
+**5 个通用脚本**：block-dangerous-git.sh、guard-dangerous-bash.sh、guard-memory-write.sh、guard-memory-approved.sh、warn-download-location.sh
 
 ### 分发方式与维护规则
 
