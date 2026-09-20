@@ -9,7 +9,7 @@
         禁止直接改 C 盘组（会被下次 -Push 覆盖） -->
 
 ## 环境约束
-- 所有代码统一用 **IntelliJ IDEA 2026.1** 编写
+- 所有代码统一用 **IntelliJ IDEA 2026.2.1** 编写
 - 已安装 **nvm**（Node 版本管理）、**pyenv**（Python 版本管理）、**g**（Go 版本管理）和 **rustup**（Rust 版本管理）
 - 升级或切换 Node、Python、Go、Rust 版本时，**必须**通过 nvm/pyenv/g/rustup，**禁止**直接安装或覆盖系统级 Node/Python/Go/Rust
 - 写 Java 代码统一用 **Java 1.8**，语法和 API 都按 1.8 来
