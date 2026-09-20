@@ -45,7 +45,7 @@
 - **git 提交用 skill**：任何 git commit/push 必须先 `Skill("git-commit")`，逐文件 stage、中文标题、原子提交，禁止 `git add . && git commit`。相关改动攒齐统一提交，别改一行提一次。提交前必须等我确认
 
 ## 记忆规则
-- 记忆放**项目根目录 `memory/`**（不是 `~/.claude/projects/` 下）；分两层：`memory/` 根 = 用户主动记录（AI 只读），`memory/ai/` = AI 自动记录（写入需人工确认）
+- 记忆放**项目根目录 `memory/`**（不是 `~/.claude/projects/` 下）；分两层：`memory/` 根 = 用户主动记录（AI 只读），`memory/ai/` = AI 自动记录（写入免确认，守卫只拦用户区与命名不合规）
 - **文件名用中文且带日期后缀 `-YYYY-MM-DD`**；更新时同步改日期和 `MEMORY.md` 索引
 - `MEMORY.md` 作索引（一行一条链接）：根管用户记录，`memory/ai/MEMORY.md` 管 AI 记录
 - **AI 自动记录写 `memory/ai/`，不入 git**（`.gitignore` 已排除）
