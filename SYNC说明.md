@@ -98,7 +98,7 @@ powershell -File scripts\sync-rules.ps1 -Push
 
 ## 三、hooks 脚本分发模型（2026-08-31 新增）
 
-四端工具的防护钩子（危险命令拦截、记忆守卫、下载提醒）**能力对齐、实现各异**：
+五端工具的防护钩子（危险命令拦截、记忆守卫、下载提醒）**能力对齐、实现各异**：
 
 ### 事实源与分发链
 
@@ -108,12 +108,13 @@ powershell -File scripts\sync-rules.ps1 -Push
 | Claude Code | `~\.claude\hooks\`（分发副本） | `~\.claude\settings.json` hooks 段加载 |
 | Zcode | 引用 `~\.claude\hooks\` 同一路径 | `~\.zcode\settings.json` hooks 段，与 Claude 共用脚本 |
 | Codex | `~\.codex\hooks\guard-memory-write-codex.sh`、`guard-memory-approved-codex.sh`（**专用适配版**，适配 apply_patch 工具与 Codex 输出格式）；Bash 拦截直接引用 `~\.claude\hooks\` 两脚本 | `~\.codex\config.toml` 的 `[[hooks.*]]` 段，需 `[features] hooks = true` |
+| Qoder | 引用 `~\.claude\hooks\` 同一路径 | `~\.qoder\settings.json` hooks 组加载（注册由 hooksSync 自动同步） |
 
 **5 个通用脚本**：block-dangerous-git.sh、guard-dangerous-bash.sh、guard-memory-write.sh、guard-memory-approved.sh、warn-download-location.sh
 
 ### 分发方式与维护规则
 
-- 通用脚本是**手动复制分发**（改完事实源后 copy 到 `~\.claude\hooks\`），**不是链接**——改脚本后必须同步复制，否则 Claude/Zcode/Codex 用旧版
+- 通用脚本是**手动复制分发**（改完事实源后 copy 到 `~\.claude\hooks\`），**不是链接**——改脚本后必须同步复制，否则 Claude/Zcode/Codex/Qoder 用旧版
 - Codex 适配版只存在于 `~\.codex\hooks\`（Codex 的 apply_patch 工具名与输入输出格式与 Claude 不同，拦截输出需 JSON 转义适配）；改它们不涉及其他端
 - 脚本改动走 coding-rules 仓库 git 提交；`~\.codex\hooks\` 不入 git
 - Codex 的 `config.toml` 里每条 hook 命令有 `trusted_hash` 登记，**hook 命令文本变更后 Codex 会要求重新信任**，属正常机制
