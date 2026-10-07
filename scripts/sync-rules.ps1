@@ -1,9 +1,9 @@
 ﻿# =====================================================================
 # sync-rules.ps1 — 全局规则文件同步脚本
 #
-# 作用：把 coding-rules 仓库的规则内容推送到 C 盘的 4 个全局规则文件
-#       （.claude\CLAUDE.md + .codex\AGENTS.md + .dsh\AGENTS.md + .zcode\AGENTS.md）。
-# 实现：C 盘 4 个文件 = 硬链接组（同 inode，改任一同步四处）。
+# 作用：把 coding-rules 仓库的规则内容推送到 C 盘的 5 个全局规则文件
+#       （.claude\CLAUDE.md + .codex\AGENTS.md + .dsh\AGENTS.md + .zcode\AGENTS.md + .qoder\AGENTS.md）。
+# 实现：C 盘 5 个文件 = 硬链接组（同 inode，改任一同步五处）。
 #       本脚本把 F 仓库内容写入组内任一文件，即全组一致。
 # 用法：
 #   powershell -File sync-rules.ps1 -Push     # 把 F 仓库内容推送到 C 盘组
@@ -24,7 +24,8 @@ $Group  = @(
     "C:\Users\Administrator\.claude\CLAUDE.md",
     "C:\Users\Administrator\.codex\AGENTS.md",
     "C:\Users\Administrator\.dsh\AGENTS.md",
-    "C:\Users\Administrator\.zcode\AGENTS.md"
+    "C:\Users\Administrator\.zcode\AGENTS.md",
+    "C:\Users\Administrator\.qoder\AGENTS.md"
 )
 
 if (-not $Push -and -not $Check) { $Check = $true }
