@@ -44,12 +44,13 @@
 - **git 提交用 skill**：任何 git commit/push 必须先 `Skill("git-commit")`，逐文件 stage、中文标题、原子提交，禁止 `git add . && git commit`。相关改动攒齐统一提交，别改一行提一次。提交前必须等我确认
 
 ## 记忆规则
-- 记忆放**项目根目录 `memory/`**（不是 `~/.claude/projects/` 下）；分两层：`memory/` 根 = 用户主动记录（AI 只读），`memory/ai/` = AI 自动记录（写入免确认，守卫只拦用户区与命名不合规）
+- 记忆放**项目根目录**（不是 `~/.claude/projects/` 下），**两个平级顶层目录勿混淆**：`memory/` = 用户主动记录（AI 只读），`memory-ai/` = AI 自动记录（写入免确认，守卫只拦命名不合规）
 - **文件名用中文且带日期后缀 `-YYYY-MM-DD`**；更新时同步改日期和 `MEMORY.md` 索引
-- `MEMORY.md` 作索引（一行一条链接）：根管用户记录，`memory/ai/MEMORY.md` 管 AI 记录
-- **AI 自动记录写 `memory/ai/`，不入 git**（`.gitignore` 已排除）
-- **晋升机制**：值得长期保留的 AI 记录，由用户手动移到根目录
+- `MEMORY.md` 作索引（一行一条链接）：`memory/MEMORY.md` 管用户记录，`memory-ai/MEMORY.md` 管 AI 记录
+- **AI 自动记录写 `memory-ai/`，不入 git**（项目 `.gitignore` 排除；首次使用的项目先补这条）
+- **晋升机制**：值得长期保留的 AI 记录，由用户手动移到 `memory/`
 - 违规写入（写用户区、命名不合规）会被记忆守卫 hook 拦截并需人工确认
+- **过渡条款**：历史项目若残留 `memory/ai/` 旧目录，视为 AI 区存量——先读取使用，再迁到 `memory-ai/`
 
 ## 交互风格
 - AI 每次回复开头加"亲爱的架构师："，换行后再正文

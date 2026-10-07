@@ -221,9 +221,9 @@ AI：不安全。cookie 明文传输，密码应该只在登录请求体中传�
 
 ## 记忆规则
 
-- 项目相关记忆默认存项目级别（`<项目>/memory/`）
-- AI 自动记录写 `<项目>/memory/ai/` 子目录；项目根 `memory/` 只放用户主动记录，用户区文件 AI 只读不改
-- AI 自动记录（`memory/ai/`）不提交 git，项目 `.gitignore` 排除；`memory/ai/` 有自己的 `MEMORY.md` 索引
+- 项目相关记忆默认存项目级别，两个平级顶层目录：用户记录 `<项目>/memory/`，AI 记录 `<项目>/memory-ai/`
+- AI 自动记录写项目根 `<项目>/memory-ai/`（与 `memory/` 平级，勿混淆）；`memory/` 只放用户主动记录，用户区文件 AI 只读不改
+- AI 自动记录（`memory-ai/`）不提交 git，项目 `.gitignore` 排除；`memory-ai/` 有自己的 `MEMORY.md` 索引
 - 全局通用事实存用户级别（`~/.claude/memory/`）
 - 不在代码库里存 AI 临时文件
 
@@ -236,8 +236,8 @@ AI：不安全。cookie 明文传输，密码应该只在登录请求体中传�
 | `block-dangerous-git.sh` | PreToolUse（Bash） | git 危险操作拦截：reset --hard、clean、branch -D、checkout/restore .、push --force，及 `git add .`/`-A`/`-a`/`--all` 全部暂存 |
 | `guard-dangerous-bash.sh` | PreToolUse（Bash） | 危险 Bash 命令拦截（不依赖权限模式）：rm 指向非构建/缓存白名单、reg delete、sc delete、shutdown/reboot、bcdedit、DROP/TRUNCATE、无 WHERE 的 DELETE/UPDATE、chmod -R 777/chown -R、find -delete/-exec、mkfs/fdisk/fork bomb 一律 deny；taskkill /f、net stop/start、sc stop/start 放行；rm 指向 target/node_modules/dist/__pycache__ 等构建缓存目录放行 |
 | `warn-download-location.sh` | PostToolUse（Bash） | 下载落盘提醒：curl/wget/xh 带 `-o`/`--output` 且目标不在 `N:\文件下载\ai自动下载\` 时提醒（仅提醒不拦截） |
-| `guard-memory-write.sh` | PreToolUse（Write\|Edit\|MultiEdit） | 写 `memory/` 前把关：用户区 ask、AI 区新文件放行、命名不合规 deny |
-| `guard-memory-approved.sh` | PostToolUse（Write\|Edit\|MultiEdit） | 写入 `memory/ai/` 成功后记入批准台账 `~/.claude/memory-ai-approved.txt`，后续不再打扰 |
+| `guard-memory-write.sh` | PreToolUse（Write\|Edit\|MultiEdit） | 写 `memory/`、`memory-ai/` 前把关：用户区（memory/）ask、AI 区（memory-ai/）新文件放行、命名不合规 deny |
+| `guard-memory-approved.sh` | PostToolUse（Write\|Edit\|MultiEdit） | 写入 `memory-ai/` 成功后记入批准台账 `~/.claude/memory-ai-approved.txt`，后续不再打扰 |
 
 接入全局 `~/.claude/settings.json`：
 

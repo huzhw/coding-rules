@@ -2,3 +2,5 @@
 
 .code-check.db
 CLAUDE.md.bak-*
+# AI 自动记录(记忆规则:memory-ai 只留本地,不入库)
+memory-ai/
