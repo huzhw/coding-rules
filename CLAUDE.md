@@ -1,10 +1,11 @@
 <!-- 规则同步体系（F 盘为唯一内容源）：
      ① 唯一内容源 = F:\idea-workspase-skills\coding-rules\CLAUDE.md（git 仓库，改动只改这里）
-     ② C 盘 7 个规则文件 = 单向硬链接组（.claude\CLAUDE.md + .codex/.dsh/.zcode/.qoder 四处 AGENTS.md
-        + .codebuddy\CLAUDE.md + .codebuddy\CODEBUDDY.md，同 inode 改动互见），
-        由 coding-rules\scripts\sync-rules.ps1 -Push 从 F 整文件推入（无 BOM UTF8）。
-        CodeBuddy 侧挂两份：官方文档项目级只认 CODEBUDDY.md（用户级未文档化，按同构惯例挂上），
-        CLAUDE.md 是 Claude 同构生态兼容挂法——两份同内容，谁认算谁（2026-10-10）
+     ② C 盘 5 个规则文件 = 单向硬链接组（.claude\CLAUDE.md + .codex/.dsh/.zcode/.qoder 四处
+        AGENTS.md，同 inode 改动互见），由 coding-rules\scripts\sync-rules.ps1 -Push 从 F
+        整文件推入（无 BOM UTF8）。CodeBuddy 端此前挂的 .codebuddy\CLAUDE.md / CODEBUDDY.md
+        已于 2026-10-10 摘除：官方只认项目级 CODEBUDDY.md，用户级 md 实测不读（全局规则未注入
+        会话）；CodeBuddy 用户级规则唯一通道 = ~/.codebuddy/rules/core-discipline.md
+        （frontmatter alwaysApply:true + 本文件正文，-Push 自动生成，sync-check 看管漂移）
      ③ 硬链接组的坑：编辑工具"替换写"会拆链（2026-09-05 实踩）——修复用 agent-config-sync-check
         的 sync-check.ps1 -FixHardlink（SHA256 已存在端全等才重建，分叉拒绝；缺失成员自动补建）
      ④ agent-config-sync-check 检查项 13（RulesCopyDrift）看管 F↔C 正文漂移，-Fix 只重写正文、保留本头注释
