@@ -1,10 +1,12 @@
 ﻿# =====================================================================
 # sync-rules.ps1 — 全局规则文件同步脚本
 #
-# 作用：把 coding-rules 仓库的规则内容推送到 C 盘的 5 个全局规则文件
-#       （.claude\CLAUDE.md + .codex\AGENTS.md + .dsh\AGENTS.md + .zcode\AGENTS.md + .qoder\AGENTS.md）。
-# 实现：C 盘 5 个文件 = 硬链接组（同 inode，改任一同步五处）。
-#       本脚本把 F 仓库内容写入组内任一文件，即全组一致。
+# 作用：把 coding-rules 仓库的规则内容推送到 C 盘的 7 个全局规则文件
+#       （.claude\CLAUDE.md + .codex/.dsh/.zcode/.qoder 四处 AGENTS.md
+#        + .codebuddy\CLAUDE.md + .codebuddy\CODEBUDDY.md）。
+# 实现：C 盘 7 个文件 = 硬链接组（同 inode，改任一同步七处）。
+#       本脚本把 F 仓库内容写入底座（.claude\CLAUDE.md），全组一致；
+#       组内成员缺失时自动硬链接补建（新端接入零手工）。
 # 用法：
 #   powershell -File sync-rules.ps1 -Push     # 把 F 仓库内容推送到 C 盘组
 #   powershell -File sync-rules.ps1 -Check    # 检查一致性
@@ -25,7 +27,9 @@ $Group  = @(
     "C:\Users\Administrator\.codex\AGENTS.md",
     "C:\Users\Administrator\.dsh\AGENTS.md",
     "C:\Users\Administrator\.zcode\AGENTS.md",
-    "C:\Users\Administrator\.qoder\AGENTS.md"
+    "C:\Users\Administrator\.qoder\AGENTS.md",
+    "C:\Users\Administrator\.codebuddy\CLAUDE.md",
+    "C:\Users\Administrator\.codebuddy\CODEBUDDY.md"
 )
 
 if (-not $Push -and -not $Check) { $Check = $true }
@@ -37,6 +41,16 @@ if (-not (Test-Path -LiteralPath $CFile)) {
         Write-Host "[建]  .claude\CLAUDE.md 已从 F 仓库复制" -ForegroundColor Green
     } else {
         throw "F 仓库规则文件不存在: $F_MAIN"
+    }
+}
+
+# 组内缺失成员自动补建：硬链接挂到底座（同卷 C:，等价 mklink /H；新端接入零手工）。
+# 只补「不存在」的成员——已存在的独立副本/分叉内容绝不静默接管，那归 sync-check.ps1 -FixHardlink 管
+foreach ($f in $Group) {
+    if ($f -eq $CFile) { continue }
+    if (-not (Test-Path -LiteralPath $f)) {
+        New-Item -ItemType HardLink -Path $f -Value $CFile | Out-Null
+        Write-Host "[建]  $f 已硬链接到底座（同 inode 自动跟随组内容）" -ForegroundColor Green
     }
 }
 

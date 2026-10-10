@@ -1,13 +1,15 @@
-# 五目录同步说明（coding-rules）
+# 七目录同步说明（coding-rules）
 
-本仓库 `coding-rules` 是整个 AI 编码协作规范与自研技能的**唯一内容源**，统一负责向 5 个用户级目录分发。
+本仓库 `coding-rules` 是整个 AI 编码协作规范与自研技能的**唯一内容源**，统一负责向 7 个用户级目录分发。
 
-**五个目录：**
+**七个目录：**
   1. `C:\Users\Administrator\.claude`（Claude Code）
   2. `C:\Users\Administrator\.zcode`（Zcode）
   3. `C:\Users\Administrator\.codex`（Codex）
   4. `C:\Users\Administrator\.dsh`（DSH）
-  5. `F:\idea-workspase-skills`（内容源，git 仓库）
+  5. `C:\Users\Administrator\.qoder`（Qoder）
+  6. `C:\Users\Administrator\.codebuddy`（CodeBuddy，2026-10-10 接入）
+  7. `F:\idea-workspase-skills`（内容源，git 仓库）
 
 ---
 
@@ -61,10 +63,10 @@ powershell -File scripts\sync-skills.ps1 -Base "C:\Users\Administrator\.zcode\sk
 
 ---
 
-## 二、规则文件（CLAUDE.md / AGENTS.md）同步模型
+## 二、规则文件（CLAUDE.md / AGENTS.md / CODEBUDDY.md）同步模型
 
 > `coding-rules` 的规则正文源 = **`coding-rules\CLAUDE.md`**（F 盘，参与 git）。
-> C 盘 4 个规则文件 = **单向硬链接组**（同 inode，改任一同步四处），由 push 推入。
+> C 盘 7 个规则文件 = **单向硬链接组**（同 inode，改任一同步七处），由 push 推入。
 
 ### 硬链接组（C 盘）
 
@@ -74,8 +76,12 @@ powershell -File scripts\sync-skills.ps1 -Base "C:\Users\Administrator\.zcode\sk
 | `C:\Users\Administrator\.codex\AGENTS.md` | HardLink |
 | `C:\Users\Administrator\.dsh\AGENTS.md` | HardLink |
 | `C:\Users\Administrator\.zcode\AGENTS.md` | HardLink |
+| `C:\Users\Administrator\.qoder\AGENTS.md` | HardLink |
+| `C:\Users\Administrator\.codebuddy\CLAUDE.md` | HardLink |
+| `C:\Users\Administrator\.codebuddy\CODEBUDDY.md` | HardLink |
 
-四个文件 **FileID 相同**（同一 inode），MD5 与 `coding-rules\CLAUDE.md` 完全一致（`55BED891…`）。
+七个文件 **FileID 相同**（同一 inode），正文与 `coding-rules\CLAUDE.md` 完全一致。
+CodeBuddy 侧挂两份：官方文档项目级只认 `CODEBUDDY.md`（用户级未文档化，按同构惯例挂上），`CLAUDE.md` 是 Claude 同构生态兼容挂法——谁认算谁（2026-10-10）。
 
 **同步时注意：**
 - 改 `coding-rules\CLAUDE.md` 后，**跑 push 脚本**把内容推给 C 盘组（硬链接无法跨盘自动同步）。
@@ -155,10 +161,13 @@ rd "C:\Users\Administrator\.zcode\skills\code-check"
 
 ### 规则硬链接组重建
 ```bat
-del "C:\Users\Administrator\.codex\AGENTS.md" "C:\Users\Administrator\.dsh\AGENTS.md" "C:\Users\Administrator\.zcode\AGENTS.md"
+del "C:\Users\Administrator\.codex\AGENTS.md" "C:\Users\Administrator\.dsh\AGENTS.md" "C:\Users\Administrator\.zcode\AGENTS.md" "C:\Users\Administrator\.qoder\AGENTS.md" "C:\Users\Administrator\.codebuddy\CLAUDE.md" "C:\Users\Administrator\.codebuddy\CODEBUDDY.md"
 copy  "C:\Users\Administrator\.claude\CLAUDE.md" "C:\Users\Administrator\.codex\AGENTS.md"
 mklink /H "C:\Users\Administrator\.dsh\AGENTS.md"   "C:\Users\Administrator\.claude\CLAUDE.md"
 mklink /H "C:\Users\Administrator\.zcode\AGENTS.md" "C:\Users\Administrator\.claude\CLAUDE.md"
+mklink /H "C:\Users\Administrator\.qoder\AGENTS.md" "C:\Users\Administrator\.claude\CLAUDE.md"
+mklink /H "C:\Users\Administrator\.codebuddy\CLAUDE.md"   "C:\Users\Administrator\.claude\CLAUDE.md"
+mklink /H "C:\Users\Administrator\.codebuddy\CODEBUDDY.md" "C:\Users\Administrator\.claude\CLAUDE.md"
 ```
 > `mklink /H` 建文件硬链接（同卷）。
 

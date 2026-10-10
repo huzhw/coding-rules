@@ -1,8 +1,8 @@
 # coding-rules
 
-## 📌 五目录同步说明
+## 📌 七目录同步说明
 
-本仓库作为**内容源**统一向 5 个用户级目录分发：`.claude` / `.zcode` / `.codex` / `.dsh`（C 盘，硬链接组 + junction）+ 本仓库自身（F 盘）。自研技能 14 个已全部直连 F 仓库；规则文件为 C 盘硬链接组 + F 源。
+本仓库作为**内容源**统一向 7 个用户级目录分发：`.claude` / `.zcode` / `.codex` / `.dsh` / `.qoder` / `.codebuddy`（C 盘，硬链接组 + junction）+ 本仓库自身（F 盘）。自研技能 14 个已全部直连 F 仓库；规则文件为 C 盘硬链接组 + F 源。
 
 **完整同步模型、脚本用法、回滚方法见 [SYNC说明.md](SYNC说明.md)**。常用：
 
@@ -41,6 +41,7 @@ powershell -File scripts\sync-rules.ps1 -Check
 | AI 工具 | 放到哪里 | 说明 |
 |--------|---------|------|
 | **Claude Code** | `~/.claude/CLAUDE.md` | 用户级全局配置，所有项目生效 |
+| **CodeBuddy** | `~/.codebuddy/CODEBUDDY.md`（另有 `~/.codebuddy/CLAUDE.md` 兼容副本，同内容硬链接） | 用户级全局配置，所有项目生效；CodeBuddy 官方文档只认项目根 CODEBUDDY.md，用户级按同构惯例挂载 |
 | **Codex (OpenAI)** | 设置 → Instructions → 粘贴进去 | 全局 system prompt |
 | **Cursor** | `~/.cursorrules` | 全局规则文件 |
 | **Windsurf** | `~/.windsurfrules` | 全局规则文件 |
