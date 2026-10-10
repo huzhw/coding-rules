@@ -1,11 +1,12 @@
 ﻿# =====================================================================
 # sync-rules.ps1 — 全局规则文件同步脚本
 #
-# 作用：把 coding-rules 仓库的规则内容推送到 C 盘的 5 个全局规则文件
-#       （.claude\CLAUDE.md + .codex/.dsh/.zcode/.qoder 四处 AGENTS.md），
+# 作用：把 coding-rules 仓库的规则内容推送到 C 盘的 6 个全局规则文件
+#       （.claude\CLAUDE.md + .codex/.dsh/.zcode/.qoder/.minimax 五处 AGENTS.md；
+#       .minimax 端 = MiniMax Code，2026-10-10 接入，全局规则 = ~/.minimax/AGENTS.md），
 #       并生成/刷新 CodeBuddy 用户规则副本
 #       （.codebuddy\rules\core-discipline.md = frontmatter + F 源全文）。
-# 实现：C 盘 5 个文件 = 硬链接组（同 inode，改任一同步五处）。
+# 实现：C 盘 6 个文件 = 硬链接组（同 inode，改任一同步六处）。
 #       CodeBuddy 官方不读用户目录下的 CLAUDE.md/CODEBUDDY.md（2026-10-10
 #       实测：全局规则未注入会话；官方只认项目级 CODEBUDDY.md），用户级
 #       规则唯一通道 = ~/.codebuddy/rules/ 下带 alwaysApply:true frontmatter
@@ -31,7 +32,8 @@ $Group  = @(
     "C:\Users\Administrator\.codex\AGENTS.md",
     "C:\Users\Administrator\.dsh\AGENTS.md",
     "C:\Users\Administrator\.zcode\AGENTS.md",
-    "C:\Users\Administrator\.qoder\AGENTS.md"
+    "C:\Users\Administrator\.qoder\AGENTS.md",
+    "C:\Users\Administrator\.minimax\AGENTS.md"
 )
 
 # CodeBuddy 用户规则副本（拷贝端，非硬链接）：frontmatter 固定不变，正文跟随 F 源。
@@ -40,7 +42,7 @@ $CB_RULES_DIR   = "C:\Users\Administrator\.codebuddy\rules"
 $CB_COPY        = "$CB_RULES_DIR\core-discipline.md"
 $CB_FRONTMATTER = @"
 ---
-description: 全局核心纪律：编辑前确认流程、环境约束、工具约定（与 C 盘五链接规则同源；改规则走 coding-rules 仓库再 -Push，勿直改本文件）
+description: 全局核心纪律：编辑前确认流程、环境约束、工具约定（与 C 盘六链接规则同源；改规则走 coding-rules 仓库再 -Push，勿直改本文件）
 alwaysApply: true
 enabled: true
 ---
