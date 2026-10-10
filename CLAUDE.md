@@ -1,9 +1,10 @@
 <!-- 规则同步体系（F 盘为唯一内容源）：
      ① 唯一内容源 = F:\idea-workspase-skills\coding-rules\CLAUDE.md（git 仓库，改动只改这里）
-     ② C 盘 5 个规则文件 = 单向硬链接组（.claude\CLAUDE.md + .codex/.dsh/.zcode/.qoder 四处 AGENTS.md，
-        同 inode 改动互见），由 coding-rules\scripts\sync-rules.ps1 -Push 从 F 整文件推入（无 BOM UTF8）
+     ② C 盘 6 个规则文件 = 单向硬链接组（.claude\CLAUDE.md + .codex/.dsh/.zcode/.qoder 四处 AGENTS.md
+        + .codebuddy\CLAUDE.md，2026-10-10 接入 CodeBuddy，同 inode 改动互见），
+        由 coding-rules\scripts\sync-rules.ps1 -Push 从 F 整文件推入（无 BOM UTF8）
      ③ 硬链接组的坑：编辑工具"替换写"会拆链（2026-09-05 实踩）——修复用 agent-config-sync-check
-        的 sync-check.ps1 -FixHardlink（SHA256 五端全等才重建，分叉拒绝）
+        的 sync-check.ps1 -FixHardlink（SHA256 已存在端全等才重建，分叉拒绝；缺失成员自动补建）
      ④ agent-config-sync-check 检查项 13（RulesCopyDrift）看管 F↔C 正文漂移，-Fix 只重写正文、保留本头注释
      ⑤ 维护顺序（红线）：改 F → git commit/push → sync-rules.ps1 -Push → 再跑任何 sync-check。
         禁止直接改 C 盘组（会被下次 -Push 覆盖） -->
