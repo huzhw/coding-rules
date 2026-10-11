@@ -6,7 +6,7 @@
   1. `C:\Users\Administrator\.claude`（Claude Code）
   2. `C:\Users\Administrator\.zcode`（Zcode）
   3. `C:\Users\Administrator\.codex`（Codex）
-  4. `C:\Users\Administrator\.dsh`（DSH）
+  4. `C:\Users\Administrator\.dsh`（DeepSeek Harness）
   5. `C:\Users\Administrator\.qoder`（Qoder）
   6. `C:\Users\Administrator\.codebuddy`（CodeBuddy，2026-10-10 接入）
   7. `C:\Users\Administrator\.minimax`（MiniMax Code，2026-10-10 接入，仅规则分发）
@@ -133,7 +133,7 @@ powershell -File scripts\sync-rules.ps1 -Push
 | Claude Code | `~\.claude\settings.json` → `hooks` | PreToolUse：Bash×3（危险 git / && / 危险 bash）、Write\|Edit 记忆守卫；PostToolUse：记忆台账、下载提醒；Stop/SessionEnd：tokentracker 通知 |
 | Zcode | `~\.zcode\settings.json` → `hooks` | 同 Claude（不含 rtk、不含 tokentracker） |
 | Codex | `~\.codex\config.toml` → `[[hooks.PreToolUse/PostToolUse]]` | Bash 前置×2、apply_patch 前后置记忆守卫；`notify` 已接 tokentracker |
-| DSH | 无 hooks 机制，等价物见 `agent-config-sync-check\HOOKS说明.md` | rules.yaml 规则 + 内置基线 + dsh-permission-rules / dsh-auto-review / dsh-defend / dsh-notification 四插件 |
+| DeepSeek Harness | 无 hooks 机制，等价物见 `agent-config-sync-check\HOOKS说明.md` | rules.yaml 规则 + 内置基线 + dsh-permission-rules / dsh-auto-review / dsh-defend / dsh-notification 四插件 |
 
 ---
 
