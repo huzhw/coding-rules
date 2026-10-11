@@ -7,7 +7,11 @@
 #       .qoder-cn 端 = Qoder CN 国内版，2026-10-11 由 .qoder 换端（国际版壳当日卸载，
 #       国内版 CLI 数据目录实锤 = ~/.qoder-cn）），
 #       并生成/刷新 CodeBuddy 用户规则副本
-#       （.codebuddy\rules\core-discipline.md = frontmatter + F 源全文）。
+#       （.codebuddy\rules\core-discipline.md = frontmatter + F 源全文）
+#       与 WorkBuddy 用户级记忆副本
+#       （~\.workbuddy\user-<id>-personal\MEMORY.md = 专属头注释 + F 源剥头注释正文；
+#       2026-10-11 接入，拷贝端非硬链接；该文件是 WorkBuddy 跨项目记忆，每会话约
+#       4000 字符上限，-Push 总长超 3900 告警）。
 # 实现：C 盘 6 个文件 = 硬链接组（同 inode，改任一同步六处）。
 #       CodeBuddy 官方不读用户目录下的 CLAUDE.md/CODEBUDDY.md（2026-10-10
 #       实测：全局规则未注入会话；官方只认项目级 CODEBUDDY.md），用户级
@@ -15,8 +19,8 @@
 #       的 md——它是拷贝端不是硬链接（frontmatter 须独立于组内容），
 #       由本脚本 -Push 生成/刷新、agent-config-sync-check 的 RulesCopyDrift 看管。
 # 用法：
-#   powershell -File sync-rules.ps1 -Push     # 把 F 仓库内容推送到 C 盘组 + 刷新 CodeBuddy 副本
-#   powershell -File sync-rules.ps1 -Check    # 检查一致性（含 CodeBuddy 副本）
+#   powershell -File sync-rules.ps1 -Push     # 把 F 仓库内容推送到 C 盘组 + 刷新 CodeBuddy/WorkBuddy 副本
+#   powershell -File sync-rules.ps1 -Check    # 检查一致性（含 CodeBuddy/WorkBuddy 副本）
 #   powershell -File sync-rules.ps1           # 默认 Check
 # =====================================================================
 
@@ -48,6 +52,22 @@ description: 全局核心纪律：编辑前确认流程、环境约束、工具�
 alwaysApply: true
 enabled: true
 ---
+"@
+
+# WorkBuddy 用户级记忆副本（拷贝端，非硬链接）：专属头注释固定不变，正文 = F 源剥掉开头
+# <!-- --> 头注释后的组正文。该文件同时是 WorkBuddy 的跨项目记忆文件，每会话约 4000 字符
+# 上限、超限尾部截断——-Push 时总长 >3900 黄字告警。用户若直改正文会被下次 -Push 覆盖
+# （与 C 盘组同一条红线）；漂移由 agent-config-sync-check 的 RulesCopyDrift 看管（-Fix
+# 保留本头注释、重写正文），副本登记在 sync-config.json 的 rulesHardlink.manualCopies。
+$WB_MEMORY = "C:\Users\Administrator\.workbuddy\user-48bcec2f-1f86-4f6a-a96d-53018280f4a0-personal\MEMORY.md"
+$WB_HEADER = @"
+<!-- 来源与同步说明（勿删）：
+     唯一内容源 = F:\idea-workspase-skills\coding-rules\CLAUDE.md（git 仓库，改动只改那里）
+     → 硬链接组 ~/.codex/AGENTS.md 等 6 份 → 本文件（WorkBuddy 用户级记忆，跨项目、每次会话读取）
+     本文件由 coding-rules\scripts\sync-rules.ps1 -Push 整文件自动覆写，漂移由 agent-config-sync-check
+     的 RulesCopyDrift 看管（-Fix 保留本头注释、重写正文）
+     红线：本文件是规则专用推送端，禁止追加任何内容；跨项目附加记忆写各工作区 .workbuddy/memory/MEMORY.md
+     容量红线：WorkBuddy 每会话约 4000 字符上限，超限尾部会被截断（-Push 在总长 >3900 时告警） -->
 "@
 
 if (-not $Push -and -not $Check) { $Check = $true }
@@ -108,6 +128,22 @@ if ($Check) {
             Write-Host "[异]  CodeBuddy 用户规则副本与 F 仓库不同（跑 -Push 同步）" -ForegroundColor Yellow
         }
     }
+    # WorkBuddy 用户规则副本：剥头注释后比对正文（与 sync-check 口径一致）
+    if (-not (Test-Path -LiteralPath $WB_MEMORY)) {
+        Write-Host "[缺]  $WB_MEMORY（WorkBuddy 用户规则副本，跑 -Push 生成）" -ForegroundColor Red
+    } else {
+        $wbText = [IO.File]::ReadAllText($WB_MEMORY)
+        $wbHead = [regex]::Match($wbText, '(?s)\A\s*<!--.*?-->\s*')
+        if ($wbHead.Success) { $wbText = $wbText.Substring($wbHead.Length) }
+        $wbSrc = (Get-Content -LiteralPath $F_MAIN -Raw -Encoding UTF8)
+        $srcHead = [regex]::Match($wbSrc, '(?s)\A\s*<!--.*?-->\s*')
+        if ($srcHead.Success) { $wbSrc = $wbSrc.Substring($srcHead.Length) }
+        if ($wbText.Trim() -eq $wbSrc.Trim()) {
+            Write-Host "[OK]  WorkBuddy 用户规则副本 == F 仓库（正文一致）" -ForegroundColor Green
+        } else {
+            Write-Host "[异]  WorkBuddy 用户规则副本与 F 仓库不同（跑 -Push 同步）" -ForegroundColor Yellow
+        }
+    }
 }
 
 if ($Push) {
@@ -129,4 +165,13 @@ if ($Push) {
     }
     [System.IO.File]::WriteAllText($CB_COPY, $CB_FRONTMATTER + "`r`n`r`n" + $content, (New-Object System.Text.UTF8Encoding($false)))
     Write-Host "[推送完成] CodeBuddy 用户规则副本已生成: $CB_COPY" -ForegroundColor Green
+    # WorkBuddy 用户规则副本：整文件重写（专属头注释 + F 源剥头注释正文，无 BOM UTF8）；
+    # 总长 >3900 字符告警（WorkBuddy 每会话约 4000 上限，超限尾部截断）
+    $wbBody = [regex]::Replace($content, '(?s)\A\s*<!--.*?-->\s*', '')
+    $wbFull = $WB_HEADER + "`r`n`r`n" + $wbBody
+    [System.IO.File]::WriteAllText($WB_MEMORY, $wbFull, (New-Object System.Text.UTF8Encoding($false)))
+    Write-Host "[推送完成] WorkBuddy 用户规则副本已生成: $WB_MEMORY" -ForegroundColor Green
+    if ($wbFull.Length -gt 3900) {
+        Write-Host "[警告] WorkBuddy 副本总长 $($wbFull.Length) 字符，超 3900 安全线（每会话约 4000 上限，尾部会被截断），请精简 F 源正文" -ForegroundColor Yellow
+    }
 }
