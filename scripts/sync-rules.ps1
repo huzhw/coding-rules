@@ -2,8 +2,10 @@
 # sync-rules.ps1 — 全局规则文件同步脚本
 #
 # 作用：把 coding-rules 仓库的规则内容推送到 C 盘的 6 个全局规则文件
-#       （.claude\CLAUDE.md + .codex/.dsh/.zcode/.qoder/.minimax 五处 AGENTS.md；
-#       .minimax 端 = MiniMax Code，2026-10-10 接入，全局规则 = ~/.minimax/AGENTS.md），
+#       （.claude\CLAUDE.md + .codex/.dsh/.zcode/.qoder-cn/.minimax 五处 AGENTS.md；
+#       .minimax 端 = MiniMax Code，2026-10-10 接入，全局规则 = ~/.minimax/AGENTS.md；
+#       .qoder-cn 端 = Qoder CN 国内版，2026-10-11 由 .qoder 换端（国际版壳当日卸载，
+#       国内版 CLI 数据目录实锤 = ~/.qoder-cn）），
 #       并生成/刷新 CodeBuddy 用户规则副本
 #       （.codebuddy\rules\core-discipline.md = frontmatter + F 源全文）。
 # 实现：C 盘 6 个文件 = 硬链接组（同 inode，改任一同步六处）。
@@ -32,7 +34,7 @@ $Group  = @(
     "C:\Users\Administrator\.codex\AGENTS.md",
     "C:\Users\Administrator\.dsh\AGENTS.md",
     "C:\Users\Administrator\.zcode\AGENTS.md",
-    "C:\Users\Administrator\.qoder\AGENTS.md",
+    "C:\Users\Administrator\.qoder-cn\AGENTS.md",
     "C:\Users\Administrator\.minimax\AGENTS.md"
 )
 

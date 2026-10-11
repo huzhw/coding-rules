@@ -1,8 +1,10 @@
 <!-- 规则同步体系（F 盘为唯一内容源）：
      ① 唯一内容源 = F:\idea-workspase-skills\coding-rules\CLAUDE.md（git 仓库，改动只改这里）
-     ② C 盘 6 个规则文件 = 单向硬链接组（.claude\CLAUDE.md + .codex/.dsh/.zcode/.qoder/.minimax
+     ② C 盘 6 个规则文件 = 单向硬链接组（.claude\CLAUDE.md + .codex/.dsh/.zcode/.qoder-cn/.minimax
         五处 AGENTS.md，同 inode 改动互见；.minimax 端 = MiniMax Code，2026-10-10 接入，其全局
-        规则文件经源码实锤 = ~/.minimax/AGENTS.md（join(dataDir,'AGENTS.md')，32KB 上限）），由
+        规则文件经源码实锤 = ~/.minimax/AGENTS.md（join(dataDir,'AGENTS.md')，32KB 上限）；
+        .qoder-cn 端 = Qoder CN 国内版，2026-10-11 由 .qoder 换端（国际版壳当日卸载，国内版
+        CLI 数据目录实锤 = ~/.qoder-cn，旧 ~/.qoder/AGENTS.md 脱离组留存作历史）），由
         coding-rules\scripts\sync-rules.ps1 -Push 从 F
         整文件推入（无 BOM UTF8）。CodeBuddy 端此前挂的 .codebuddy\CLAUDE.md / CODEBUDDY.md
         已于 2026-10-10 摘除：官方只认项目级 CODEBUDDY.md，用户级 md 实测不读（全局规则未注入
