@@ -1,7 +1,7 @@
 ﻿# =====================================================================
 # sync-skills.ps1 — 统一技能 junction 同步脚本
 #
-# 作用：确保 claude / dsh / codex / zcode / qoder 五个全局 skills 目录中的
+# 作用：确保 claude / dsh / codex / zcode / qoder-cn 五个全局 skills 目录中的
 #       自研技能全部直连 F 仓库（F:\idea-workspase-skills）。
 # 用法：
 #   powershell -File sync-skills.ps1            # 校验 + 报告
@@ -82,7 +82,7 @@ if ($Base -ne "") {
         "C:\Users\Administrator\.dsh\skills",
         "C:\Users\Administrator\.codex\skills",
         "C:\Users\Administrator\.zcode\skills",
-        "C:\Users\Administrator\.qoder\skills"
+        "C:\Users\Administrator\.qoder-cn\skills"
     )
 }
 
