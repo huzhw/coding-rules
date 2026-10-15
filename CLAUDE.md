@@ -23,7 +23,7 @@
 - 写 Java 代码统一用 **Java 1.8**，语法和 API 都按 1.8 来
 - **Maven 本地仓库 = `F:\maven\repository3.8.1`**
 - 所有下载文件统一放到 **`N:\文件下载\ai自动下载\`**
-- **下载前先看来源**：国外源优先找国内镜像，按顺序试（一个挂了换下一个）。Python/pip/uv → 阿里云 `https://mirrors.aliyun.com/pypi/simple/`、清华 `https://pypi.tuna.tsinghua.edu.cn/simple/`。npm → 淘宝 `https://registry.npmmirror.com`。Rust rustup → 清华 `https://mirrors.tuna.tsinghua.edu.cn/rustup/`、cargo → rsproxy `https://rsproxy.cn/`。GitHub → 优先本机 v2rayN 加速代理（项目 `F:\香港服务器-GitHub加速`）：git 对 github.com 已全局配置 `http.https://github.com.proxy=socks5h://127.0.0.1:10808`，clone/pull/push 免配置直接走；其他命令行下载（curl/wget/Invoke-WebRequest）显式带代理 `--proxy socks5h://127.0.0.1:10808` 或环境变量 `HTTPS_PROXY=socks5://127.0.0.1:10808`；代理不通时退回 `https://ghproxy.net/` 前缀代理
+- **下载前先看来源**：国外源优先找国内镜像，按顺序试（一个挂了换下一个）。Python/pip/uv → 阿里云 `https://mirrors.aliyun.com/pypi/simple/`、清华 `https://pypi.tuna.tsinghua.edu.cn/simple/`。npm → 淘宝 `https://registry.npmmirror.com`。Rust rustup → 清华 `https://mirrors.tuna.tsinghua.edu.cn/rustup/`、cargo → rsproxy `https://rsproxy.cn/`。GitHub → 自动走本机 v2rayN 代理（git 已全局配置，免设置）；代理不通时退回 `https://ghproxy.net/` 前缀代理
 - **查数据库统一用 DBX MCP**：所有数据库操作（达梦/MySQL/Oracle/PostgreSQL/Kingbase）通过全局 DBX MCP 的 `dbx_*` 系列工具执行，连接已在 DBX 桌面端（`D:\tools\DBX\dbx.exe`）配置好。禁止在各项目 `.mcp.json` 里单独配数据库 MCP
 - **读/写 Excel 用 `officecli`**：`officecli view file.xlsx text --json` 读，`officecli create/batch/set/add` 写，不写 Python 脚本
 - **JSON 处理用 `jq`**：`curl ... | jq .` 格式化、`jq '.data[].NAME'` 提取字段
