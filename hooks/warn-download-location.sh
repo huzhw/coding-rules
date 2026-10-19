@@ -1,4 +1,5 @@
 #!/bin/bash
+export PATH="/usr/bin:/bin:$PATH"
 # =====================================================================
 # 下载落盘位置提醒（PostToolUse）— 下载文件须放 N:\文件下载\ai自动下载\
 #
@@ -11,7 +12,7 @@
 #   - 测不到的场景：git clone、curl -O 落当前目录、管道重定向等
 # =====================================================================
 
-INPUT=$(cat)
+IFS= read -r -d '' INPUT || true
 COMMAND=$(printf '%s' "$INPUT" | jq -r '.tool_input.command // empty')
 [ -z "$COMMAND" ] && exit 0
 

@@ -1,4 +1,5 @@
 #!/bin/bash
+export PATH="/usr/bin:/bin:$PATH"
 # =====================================================================
 # 记忆写入记账（PostToolUse）— 配套 guard-memory-write.sh
 #
@@ -8,7 +9,7 @@
 # 幂等：已记录的不重复追加。
 # =====================================================================
 
-INPUT=$(cat)
+IFS= read -r -d '' INPUT || true
 FILE=$(printf '%s' "$INPUT" | jq -r '.tool_response.filePath // .tool_input.file_path // empty')
 [ -z "$FILE" ] && exit 0
 

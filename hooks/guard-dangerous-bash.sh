@@ -1,4 +1,6 @@
 #!/bin/bash
+export PATH="/usr/bin:/bin:$PATH"
+shopt -s nocasematch
 # =====================================================================
 # 危险 Bash 命令守卫（PreToolUse）— 与权限模式无关的硬性红线
 #
@@ -28,7 +30,7 @@
 #      不能走 STRIPPED（引号内会被剥掉 → 漏拦），必须用原始 COMMAND 匹配。
 # =====================================================================
 
-INPUT=$(cat)
+IFS= read -r -d '' INPUT || true
 COMMAND=$(printf '%s' "$INPUT" | jq -r '.tool_input.command // empty')
 [ -z "$COMMAND" ] && printf '{"continue":true}' && exit 0
 
@@ -68,7 +70,7 @@ STRIPPED=$(printf '%s' "$COMMAND" | awk '
 # 因为 rm -rf 不可逆，而构建目录清缓存属于最常见且低风险操作。
 # 目标先归一化：小写、去尾斜杠（支持 ./target / target/ / target 三种写法）
 SAFE_RM_DIR='^(\./)?(target|node_modules|dist|build|out|classes|logs|package|__pycache__|\.pytest_cache|\.coverage|\.mypy_cache|\.venv|venv)(/|$)|\.pyc$'
-if printf '%s' "$STRIPPED" | grep -qE '(^|[[:space:]]|/)rm([[:space:]]|$).*(-[a-z]*[rR][a-z]*)'; then
+if [[ "$STRIPPED" =~ (^|[[:space:]]|/)rm([[:space:]]|$).*(-[a-z]*[rR][a-z]*) ]]; then
   # 取 rm 后面的目标（去掉 rm 本体及 -r/-f/-rf/-R 等选项）
   RM_TARGET=$(printf '%s' "$STRIPPED" | sed -E 's/.*(^|[[:space:]])rm([[:space:]]|$)//')
   RM_TARGET=$(printf '%s' "$RM_TARGET" | sed -E 's/^-[rRfF]+//')
@@ -76,12 +78,12 @@ if printf '%s' "$STRIPPED" | grep -qE '(^|[[:space:]]|/)rm([[:space:]]|$).*(-[a-
   # 归一化：小写 + 去掉末尾斜杠（相对路径 ./ 前缀保留以便白名单判定）
   RM_TARGET_LC=$(printf '%s' "$RM_TARGET" | tr '[:upper:]' '[:lower:]')
   RM_TARGET_LC=${RM_TARGET_LC%/}
-  if [ -z "$RM_TARGET_LC" ] || printf '%s' "$RM_TARGET_LC" | grep -qE '^(\.\.|/|[a-z]:|~)'; then
+  if [ -z "$RM_TARGET_LC" ] || [[ "$RM_TARGET_LC" =~ ^(\.\.|/|[a-z]:|~) ]]; then
     printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"危险命令（P0 删除类）被拦截：rm 目标 %s 为空或为绝对/上级路径，禁止执行。"}}' "$(json_escape "$RM_TARGET")"
     exit 0
   fi
   # 白名单：项目内构建/缓存/输出目录 → 放行
-  if printf '%s' "$RM_TARGET_LC" | grep -qE "$SAFE_RM_DIR"; then
+  if [[ "$RM_TARGET_LC" =~ $SAFE_RM_DIR ]]; then
     printf '{"continue":true}'
     exit 0
   fi
@@ -89,41 +91,41 @@ if printf '%s' "$STRIPPED" | grep -qE '(^|[[:space:]]|/)rm([[:space:]]|$).*(-[a-
   printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"危险命令（P0 删除类）被拦截：rm 目标 %s 不在构建/缓存/输出白名单，且非本次确认的安全操作。如需删除请精确指定已确认的路径。"}}' "$(json_escape "$RM_TARGET")"
   exit 0
 fi
-if printf '%s' "$STRIPPED" | grep -qE 'find[[:space:]].*-(delete|-exec|-ok)([[:space:]]|$)'; then
+if [[ "$STRIPPED" =~ find[[:space:]].*-(delete|-exec|-ok)([[:space:]]|$) ]]; then
   printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"危险命令（P0 删除类）被拦截：find 带 -delete/-exec/-ok 可能批量删除。请改用人工逐条确认的高置信度操作。"}}'
   exit 0
 fi
 
 # ---- DANGER P1: 系统状态变更（可逆的运维命令不在本清单） ----
 for cmd in 'reg[[:space:]]+delete' 'sc[[:space:]]+delete' 'shutdown[[:space:]]*$|shutdown[[:space:]]+.*-r' '(^|[[:space:]])reboot([[:space:]]|$)|reboot$' 'bcdedit'; do
-  if printf '%s' "$STRIPPED" | grep -qiE "$cmd"; then
+  if [[ "$STRIPPED" =~ $cmd ]]; then
     printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"危险命令（P1 系统状态变更）被拦截：命中 %s。系统级变更请人工在服务器上操作。"}}' "$(json_escape "$cmd")"
     exit 0
   fi
 done
 
 # ---- DANGER P2: 数据库 DDL / 危险 DML（用原始 COMMAND，避免引号内漏拦） ----
-if printf '%s' "$COMMAND" | grep -qiE '(drop|truncate)[[:space:]]+(table|schema|database)'; then
+if [[ "$COMMAND" =~ (drop|truncate)[[:space:]]+(table|schema|database) ]]; then
   printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"危险命令（P2 数据库 DDL）被拦截：DROP/TRUNCATE。结构变更请在 DBX 或人工审核后执行。"}}'
   exit 0
 fi
-if printf '%s' "$COMMAND" | grep -qiE 'delete[[:space:]]+from[[:space:]]+[a-z0-9_.]+' && ! printf '%s' "$COMMAND" | grep -qiE 'delete[[:space:]]+from[[:space:]]+[a-z0-9_.]+[[:space:]]+where'; then
+if [[ "$COMMAND" =~ delete[[:space:]]+from[[:space:]]+[a-z0-9_.]+ ]] && ! [[ "$COMMAND" =~ delete[[:space:]]+from[[:space:]]+[a-z0-9_.]+[[:space:]]+where ]]; then
   printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"危险命令（P2 数据库 DML）被拦截：DELETE FROM 缺少 WHERE 会整表删除。"}}'
   exit 0
 fi
-if printf '%s' "$COMMAND" | grep -qiE 'update[[:space:]]+[a-z0-9_.]+[[:space:]]+set' && ! printf '%s' "$COMMAND" | grep -qiE 'update[[:space:]]+[a-z0-9_.]+[[:space:]]+set.*where'; then
+if [[ "$COMMAND" =~ update[[:space:]]+[a-z0-9_.]+[[:space:]]+set ]] && ! [[ "$COMMAND" =~ update[[:space:]]+[a-z0-9_.]+[[:space:]]+set.*where ]]; then
   printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"危险命令（P2 数据库 DML）被拦截：UPDATE 缺少 WHERE 会全表改写。"}}'
   exit 0
 fi
 
 # ---- DANGER P3: 权限放大 ----
-if printf '%s' "$STRIPPED" | grep -qiE '(chmod[[:space:]]+-R[[:space:]]*777|chown[[:space:]]+-R|chmod[[:space:]]+-?[rR]([[:space:]]|$)000)'; then
+if [[ "$STRIPPED" =~ (chmod[[:space:]]+-R[[:space:]]*777|chown[[:space:]]+-R|chmod[[:space:]]+-?[rR]([[:space:]]|$)000) ]]; then
   printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"危险命令（P3 权限放大）被拦截：chmod/chown 递归修改权限。请限定到精确路径。"}}'
   exit 0
 fi
 
 # ---- DANGER P4: 系统破坏类 ----
-if printf '%s' "$STRIPPED" | grep -qiE '(^|[[:space:]])(mkfs|fdisk|format)([[:space:]]|$)|:\(\)\{\|:' ; then
+if [[ "$STRIPPED" =~ (^|[[:space:]])(mkfs|fdisk|format)([[:space:]]|$)|:\(\)\{\|: ]] ; then
   printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"危险命令（P4 系统破坏类）被拦截：mkfs/fdisk/format/fork bomb 不允许由 AI 执行。"}}'
   exit 0
 fi

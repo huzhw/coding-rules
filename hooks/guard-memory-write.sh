@@ -1,4 +1,5 @@
 #!/bin/bash
+export PATH="/usr/bin:/bin:$PATH"
 # =====================================================================
 # 记忆写入守卫（PreToolUse）— 防止 AI 幻觉乱写记忆文件
 #
@@ -15,7 +16,7 @@
 #       memory-ai/ 文件记入 ~/.claude/memory-ai-approved.txt 台账。
 # =====================================================================
 
-INPUT=$(cat)
+IFS= read -r -d '' INPUT || true
 FILE=$(printf '%s' "$INPUT" | jq -r '.tool_input.file_path // empty')
 [ -z "$FILE" ] && exit 0
 
