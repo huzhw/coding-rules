@@ -20,7 +20,7 @@
 - 所有代码统一用 **IntelliJ IDEA 2026.2.1** 编写
 - 已安装 **nvm**（Node 版本管理）、**pyenv**（Python 版本管理）、**g**（Go 版本管理）和 **rustup**（Rust 版本管理）
 - 升级或切换 Node、Python、Go、Rust 版本时，**必须**通过 nvm/pyenv/g/rustup，**禁止**直接安装或覆盖系统级 Node/Python/Go/Rust
-- **Git 装在 `F:\Program Files (x86)\Git`（2026-10-15 升级后换盘，旧 `C:\Program Files\Git` 已不存在）**：PATH 只加了 `...\Git\cmd`，裸 `bash` 会命中 `C:\Windows\System32\bash.exe`（WSL 存根）报「没有已安装的分发版」。任何 hook / 脚本调 Git Bash 一律写**绝对路径并加引号**（`"F:\Program Files (x86)\Git\bin\bash.exe"`）；Claude Code 另靠用户环境变量 `CLAUDE_CODE_GIT_BASH_PATH` 找 bash。事故清单与红线见 `agent-config-sync-check\HOOKS说明.md` 的「Git 换安装路径事故与解释器红线」段
+- **Git 装在 `F:\Program Files (x86)\Git`（2026-10-15 升级后换盘，旧 `C:\Program Files\Git` 已不存在）**：2026-10-20 已把 `...\Git\bin` 插到用户 PATH 最前（`WM_SETTINGCHANGE` 已广播，新开进程裸 `bash` 恢复 Git Bash；之前只加 `...\Git\cmd`，裸 `bash` 会命中 `C:\Windows\System32\bash.exe`（WSL 存根）报「没有已安装的分发版」）。**即便如此，任何 hook / 脚本调 Git Bash 仍一律写绝对路径并加引号**（`"F:\Program Files (x86)\Git\bin\bash.exe"`）——已跑客户端持旧 PATH，换机换端也不保证；Claude Code 另靠用户环境变量 `CLAUDE_CODE_GIT_BASH_PATH` 找 bash。**脚本里的 node 也别用 `F:\nodejs\node.exe`（nvm 符号链接），钉 `F:\nvm\<版本>\node.exe` 绝对路径**。事故清单与红线见 `agent-config-sync-check\HOOKS说明.md` 的「Git 换安装路径事故与解释器红线」段
 - 写 Java 代码统一用 **Java 1.8**，语法和 API 都按 1.8 来
 - **查 Maven 配置跑 `mvninfo`**（打印 MAVEN_HOME/生效 settings.xml/localRepository/镜像）；仓库路径以生效 settings.xml 的 `localRepository` 为准，**不要硬编码**
 - 所有下载文件统一放到 **`N:\文件下载\ai自动下载\`**
