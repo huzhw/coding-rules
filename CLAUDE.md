@@ -19,6 +19,7 @@
 - 所有下载文件统一放到 **`N:\文件下载\ai自动下载\`**
 - **下载前先看来源**：国外源优先国内镜像（一个挂了换下一个）。pip/uv → 阿里云 `https://mirrors.aliyun.com/pypi/simple/`、清华 `https://pypi.tuna.tsinghua.edu.cn/simple/`；npm → 淘宝 `https://registry.npmmirror.com`；rustup → 清华 `https://mirrors.tuna.tsinghua.edu.cn/rustup/`、cargo → rsproxy `https://rsproxy.cn/`；GitHub 自动走本机 v2rayN 代理（git 已全局配置），不通退回 `https://ghproxy.net/` 前缀
 - **数据库操作统一用 DBX MCP**（达梦/MySQL/Oracle/PostgreSQL/Kingbase 全走 `dbx_*` 工具；连接已在 DBX 桌面端 `D:\tools\DBX\dbx.exe` 配好），禁止在各项目 `.mcp.json` 里单独配数据库 MCP
+- **SQL 改动随「提交推送 / 准备发版」一起执行，禁止只交脚本干等用户问「跑了么」**：需求里出现 SQL（建表、加列、索引、初始化数据、权限注册行）时，用户一说「提交推送」或「准备发版」，就在同一次动作里把脚本跑掉，并把回查结果贴出来。执行口径：① 目标库按脚本头注的「执行库」定位（如"102 Oracle 主库 AMISP 模式"）；同号多实例（如 102 同时有 Oracle 档案库与 MySQL 档案库）逐个跑，跑完各自回查；② 一律走 DBX MCP；`COMMIT`/`BEGIN` 等事务语句 MCP 不支持，去掉即可（DDL 自提交，INSERT 靠事后回查确认已落库）；③ 只执行本次新增的那部分，`9999` 这类整份初始化脚本禁止全跑（会撞已有主键）；④ 跑完必须回查表/索引/注册行/数据行数并把结果贴给用户；⑤ 破坏性或存量变更（DROP / TRUNCATE / DELETE 存量 / 改列类型 / 数据订正）不在自动执行范围，仍单独确认。部署 jar、权限「一键同步」、`sys_role_module` 授权、重新登录仍归用户，不代做
 - **读/写 Excel 用 `officecli`**：`view ... text --json` 读，`create/batch/set/add` 写，不写 Python 脚本
 - **JSON 用 `jq`**：`curl ... | jq .` 格式化、`jq '.data[].NAME'` 取字段
 - **调 HTTP 用 `xh`**（替代 curl，JSON 自动美化）：`xh :8080/api/list page=1`
