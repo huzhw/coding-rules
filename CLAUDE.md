@@ -1,9 +1,11 @@
 <!-- 规则同步体系（F 盘为唯一内容源）：
      ① 唯一源 = 本文件（F:\idea-workspase-skills\coding-rules\CLAUDE.md，改动只改这里）
-     ② 分发 = coding-rules\scripts\sync-rules.ps1 -Push：C 盘 6 个规则文件为单向硬链接组
-        （.claude\CLAUDE.md + .codex/.dsh/.zcode/.qoder-cn/.minimax 的 AGENTS.md，同 inode 改动互见），
-        另生成 CodeBuddy 用户级唯一通道 ~/.codebuddy/rules/core-discipline.md（官方只认项目级
-        CODEBUDDY.md，用户级 md 实测不读）；.minimax 端读 ~/.minimax/AGENTS.md（32KB 上限）
+     ② 分发 = coding-rules\scripts\sync-rules.ps1 -Push：C 盘 7 个规则文件为单向硬链接组
+        （.claude\CLAUDE.md + .codex/.dsh/.zcode/.qoder-cn/.minimax 的 AGENTS.md +
+         .config\opencode\AGENTS.md，同 inode 改动互见），
+        另生成 WorkBuddy 用户级记忆副本 ~/.workbuddy/user-<id>-personal/MEMORY.md（每会话约
+        4000 字符上限）；.minimax 端读 ~/.minimax/AGENTS.md（32KB 上限）；opencode 端读
+        ~/.config/opencode/AGENTS.md（该文件缺失时会回退吃 ~/.claude/CLAUDE.md，先命中者胜）
      ③ 坑："替换写"会拆硬链接（2026-09-05 实踩）→ 用 sync-check.ps1 -FixHardlink 修（SHA256
         全等才重建、分叉拒绝、缺失成员自动补建）
      ④ 检查项 13（RulesCopyDrift）看管 F↔C 正文漂移，-Fix 只重写正文、保留本头注释

@@ -1,6 +1,6 @@
 # 九目录同步说明（coding-rules）
 
-本仓库 `coding-rules` 是整个 AI 编码协作规范与自研技能的**唯一内容源**，统一负责向 9 个用户级目录分发。
+本仓库 `coding-rules` 是整个 AI 编码协作规范与自研技能的**唯一内容源**，统一负责向 9 个目录分发（8 个用户级目录 + 内容源自身）。
 
 **九个目录：**
   1. `C:\Users\Administrator\.claude`（Claude Code）
@@ -8,10 +8,12 @@
   3. `C:\Users\Administrator\.codex`（Codex）
   4. `C:\Users\Administrator\.dsh`（DeepSeek Harness）
   5. `C:\Users\Administrator\.qoder-cn`（Qoder CN，2026-10-11 由 `.qoder` 国际版换端）
-  6. `C:\Users\Administrator\.codebuddy`（CodeBuddy，2026-10-10 接入）
-  7. `C:\Users\Administrator\.minimax`（MiniMax Code，2026-10-10 接入，仅规则分发）
-  8. `C:\Users\Administrator\.workbuddy`（WorkBuddy，2026-10-11 接入，仅规则手工副本）
+  6. `C:\Users\Administrator\.minimax`（MiniMax Code，2026-10-10 接入，仅规则分发）
+  7. `C:\Users\Administrator\.workbuddy`（WorkBuddy，2026-10-11 接入，仅规则手工副本）
+  8. `C:\Users\Administrator\.config\opencode`（OpenCode，2026-10-21 接入，仅规则硬链接组；技能不挂——opencode 自身已发现 `~/.claude/skills`）
   9. `F:\idea-workspase-skills`（内容源，git 仓库）
+
+> **历史注记**：`.codebuddy`（CodeBuddy CN，2026-10-10 接入）已于 2026-10-21 卸载退出同步，本仓库不再向该目录分发规则副本（磁盘上残留的 `rules\core-discipline.md` 不删除、不再管）。
 
 ---
 
@@ -74,7 +76,7 @@ powershell -File scripts\sync-skills.ps1 -Base "C:\Users\Administrator\.zcode\sk
 ## 二、规则文件（CLAUDE.md / AGENTS.md）同步模型
 
 > `coding-rules` 的规则正文源 = **`coding-rules\CLAUDE.md`**（F 盘，参与 git）。
-> C 盘 6 个规则文件 = **单向硬链接组**（同 inode，改任一同步六处），由 push 推入；CodeBuddy/WorkBuddy 另有手工副本跟随组。
+> C 盘 7 个规则文件 = **单向硬链接组**（同 inode，改任一同步七处），由 push 推入；手工副本只剩 WorkBuddy 一个跟随组（CodeBuddy 端 2026-10-21 卸载退出）。
 
 ### 硬链接组（C 盘）
 
@@ -86,9 +88,12 @@ powershell -File scripts\sync-skills.ps1 -Base "C:\Users\Administrator\.zcode\sk
 | `C:\Users\Administrator\.zcode\AGENTS.md` | HardLink |
 | `C:\Users\Administrator\.qoder-cn\AGENTS.md` | HardLink（2026-10-11 由 `.qoder` 换端） |
 | `C:\Users\Administrator\.minimax\AGENTS.md` | HardLink（MiniMax Code，2026-10-10 接入，其全局规则文件经源码实锤 = `~\.minimax\AGENTS.md`） |
+| `C:\Users\Administrator\.config\opencode\AGENTS.md` | HardLink（OpenCode，2026-10-21 接入；该文件缺失时 opencode 回退吃 `~/.claude/CLAUDE.md`，建了它就顶替那条回退，内容同为组正文） |
 
-六个文件 **FileID 相同**（同一 inode），正文与 `coding-rules\CLAUDE.md` 完全一致。
-CodeBuddy 端不进组：官方只认项目级 `CODEBUDDY.md`，用户级 `CLAUDE.md`/`CODEBUDDY.md` 实测不读，已于 2026-10-10 摘除；用户级规则唯一通道 = `~\.codebuddy\rules\core-discipline.md` 手工副本（frontmatter + F 源全文，由 `sync-rules.ps1 -Push` 生成，`RulesCopyDrift` 检查看管）。
+七个文件 **FileID 相同**（同一 inode），正文与 `coding-rules\CLAUDE.md` 完全一致。
+
+**历史注记（2026-10-21）**：CodeBuddy CN 已卸载，该端退出规则同步——`~\.codebuddy\rules\core-discipline.md` 手工副本（frontmatter + F 源全文）不再由 `sync-rules.ps1 -Push` 生成，`RulesCopyDrift` 也不再检查；磁盘上残留的那份不主动删除、不再管。手工副本自此外只剩 WorkBuddy 一处。
+
 WorkBuddy 端也不进组：自定义指令为云端配置、无文件入口（2026-10-11 实证），用户级规则唯一通道 = 用户级记忆 `~\.workbuddy\user-<id>-personal\MEMORY.md` 手工副本（专属头注释 + 剥离头注释的 F 源正文，由 `sync-rules.ps1 -Push` 生成，每会话约 4000 字符上限，`RulesCopyDrift` 检查看管）。
 
 **同步时注意：**
@@ -112,7 +117,7 @@ powershell -File scripts\sync-rules.ps1 -Push
 
 ## 三、hooks 脚本分发模型（2026-08-31 新增）
 
-六端工具的防护钩子（危险命令拦截、记忆守卫、下载提醒）**能力对齐、实现各异**（CodeBuddy 为 Claude Code 同构生态，2026-10-10 接入）：
+各端工具的防护钩子（危险命令拦截、记忆守卫、下载提醒）**能力对齐、实现各异**（CodeBuddy 端 2026-10-21 卸载退出，其钩子分发一并移除）：
 
 ### 事实源与分发链
 
@@ -123,13 +128,12 @@ powershell -File scripts\sync-rules.ps1 -Push
 | Zcode | 引用 `~\.claude\hooks\` 同一路径 | `~\.zcode\settings.json` hooks 段，与 Claude 共用脚本 |
 | Codex | `~\.codex\hooks\guard-memory-write-codex.sh`、`guard-memory-approved-codex.sh`（**专用适配版**，适配 apply_patch 工具与 Codex 输出格式）；Bash 拦截直接引用 `~\.claude\hooks\` 两脚本 | `~\.codex\config.toml` 的 `[[hooks.*]]` 段，需 `[features] hooks = true` |
 | Qoder | 引用 `~\.claude\hooks\` 同一路径 | `~\.qoder-cn\settings.json` hooks 组加载（注册由 hooksSync 自动同步；2026-10-11 换端） |
-| CodeBuddy | 引用 `~\.claude\hooks\` 同一路径 | `~\.codebuddy\settings.json` hooks 组加载（注册由 hooksSync 自动同步，`--source=codebuddy`；tokentracker 自带注册被排除） |
 
 **5 个通用脚本**：block-dangerous-git.sh、guard-dangerous-bash.sh、guard-memory-write.sh、guard-memory-approved.sh、warn-download-location.sh
 
 ### 分发方式与维护规则
 
-- 通用脚本是**手动复制分发**（改完事实源后 copy 到 `~\.claude\hooks\`），**不是链接**——改脚本后必须同步复制，否则 Claude/Zcode/Codex/Qoder/CodeBuddy 用旧版
+- 通用脚本是**手动复制分发**（改完事实源后 copy 到 `~\.claude\hooks\`），**不是链接**——改脚本后必须同步复制，否则 Claude/Zcode/Codex/Qoder 用旧版
 - Codex 适配版只存在于 `~\.codex\hooks\`（Codex 的 apply_patch 工具名与输入输出格式与 Claude 不同，拦截输出需 JSON 转义适配）；改它们不涉及其他端
 - 脚本改动走 coding-rules 仓库 git 提交；`~\.codex\hooks\` 不入 git
 - Codex 的 `config.toml` 里每条 hook 命令有 `trusted_hash` 登记，**hook 命令文本变更后 Codex 会要求重新信任**，属正常机制
@@ -150,7 +154,7 @@ powershell -File scripts\sync-rules.ps1 -Push
 | 操作 | 怎么做 |
 |---|---|
 | 新增/修改自研技能 | 改 `F:\...\skills\<仓库>` → 跑 `sync-check.ps1 -Fix` 同步各启用端 skills 目录（当前 5 端；旧 `sync-skills.ps1` 已退役存档） |
-| 修改规则正文 | 改 `coding-rules\CLAUDE.md` → **commit/push gitlab** → 跑 `sync-rules.ps1 -Push` 推 C 盘组与两处手工副本 |
+| 修改规则正文 | 改 `coding-rules\CLAUDE.md` → **commit/push gitlab** → 跑 `sync-rules.ps1 -Push` 推 C 盘组与手工副本（仅 WorkBuddy 一处） |
 | 从新机器恢复 | clone 各仓库到 `F:\...\skills\`（各技能独立 git 仓库）→ 跑两类脚本再校验 |
 | 校验全部 | `sync-check.ps1` + `sync-rules.ps1 -Check` |
 
@@ -170,14 +174,15 @@ rd "C:\Users\Administrator\.qoder-cn\skills\code-check"
 
 ### 规则硬链接组重建
 ```bat
-del "C:\Users\Administrator\.codex\AGENTS.md" "C:\Users\Administrator\.dsh\AGENTS.md" "C:\Users\Administrator\.zcode\AGENTS.md" "C:\Users\Administrator\.qoder-cn\AGENTS.md" "C:\Users\Administrator\.minimax\AGENTS.md"
+del "C:\Users\Administrator\.codex\AGENTS.md" "C:\Users\Administrator\.dsh\AGENTS.md" "C:\Users\Administrator\.zcode\AGENTS.md" "C:\Users\Administrator\.qoder-cn\AGENTS.md" "C:\Users\Administrator\.minimax\AGENTS.md" "C:\Users\Administrator\.config\opencode\AGENTS.md"
 copy  "C:\Users\Administrator\.claude\CLAUDE.md" "C:\Users\Administrator\.codex\AGENTS.md"
 mklink /H "C:\Users\Administrator\.dsh\AGENTS.md"      "C:\Users\Administrator\.claude\CLAUDE.md"
 mklink /H "C:\Users\Administrator\.zcode\AGENTS.md"    "C:\Users\Administrator\.claude\CLAUDE.md"
 mklink /H "C:\Users\Administrator\.qoder-cn\AGENTS.md" "C:\Users\Administrator\.claude\CLAUDE.md"
 mklink /H "C:\Users\Administrator\.minimax\AGENTS.md"  "C:\Users\Administrator\.claude\CLAUDE.md"
+mklink /H "C:\Users\Administrator\.config\opencode\AGENTS.md" "C:\Users\Administrator\.claude\CLAUDE.md"
 ```
-> `mklink /H` 建文件硬链接（同卷）。CodeBuddy/WorkBuddy 不建链接，其手工副本由 `sync-rules.ps1 -Push` 生成。
+> `mklink /H` 建文件硬链接（同卷）。WorkBuddy 不建链接，其手工副本由 `sync-rules.ps1 -Push` 生成（CodeBuddy 端 2026-10-21 卸载退出，该端副本已随之下线）。
 > 实际重建推荐直接用 `sync-check.ps1 -FixHardlink`（哈希全等才重建，分叉拒绝），上面命令仅作原理参照。
 
 ---

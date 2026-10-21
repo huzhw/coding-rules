@@ -1,8 +1,8 @@
 # coding-rules
 
-## 📌 八目录同步说明
+## 📌 九目录同步说明
 
-本仓库作为**内容源**统一向 8 个用户级目录分发：`.claude` / `.zcode` / `.codex` / `.dsh` / `.qoder` / `.codebuddy` / `.minimax`（C 盘，硬链接组 + junction；`.minimax` 为 MiniMax Code，仅规则分发）+ 本仓库自身（F 盘）。自研技能 14 个已全部直连 F 仓库；规则文件为 C 盘硬链接组 + F 源。
+本仓库作为**内容源**统一向 9 个目录分发（8 个用户级目录 + 本仓库自身 F 盘）：`.claude` / `.zcode` / `.codex` / `.dsh` / `.qoder-cn` / `.minimax` / `.workbuddy` / `.config/opencode`（C 盘，硬链接组 + junction；`.minimax` 为 MiniMax Code，仅规则分发；`.workbuddy` 为规则手工副本；`.config/opencode` 为 OpenCode，2026-10-21 接入，仅规则硬链接组——它自己已发现 `~/.claude/skills`，技能不再挂 junction）。CodeBuddy（`.codebuddy`）已于 2026-10-21 卸载退出同步，不再向其分发规则副本。自研技能 14 个已全部直连 F 仓库；规则文件为 C 盘硬链接组 + F 源。
 
 **完整同步模型、脚本用法、回滚方法见 [SYNC说明.md](SYNC说明.md)**。常用：
 
@@ -23,7 +23,7 @@ powershell -File scripts\sync-rules.ps1 -Check
 - [code-check](https://github.com/huzhw/code-check-skill)：增量代码隐患检查
 - [deepseek-harness-settings-curator](https://github.com/huzhw/deepseek-harness-settings-curator)：DSH 模型配置梳理
 - [deepseek-harness-plugin-doctor](https://github.com/huzhw/deepseek-harness-plugin-doctor)：DSH 插件与升级体检医生
-- [agent-config-sync-check](https://github.com/huzhw/agent-config-sync-check)：八端同步守卫：链接/硬链接/README 同步检查与修复
+- [agent-config-sync-check](https://github.com/huzhw/agent-config-sync-check)：八端同步守卫（CodeBuddy 2026-10-21 卸载退出、OpenCode 同日接入）：链接/硬链接/README 同步检查与修复
 - [daily-report-panel](https://github.com/huzhw/daily-report-panel)：日报管家（关联仓库，非 skill，自动合并/导出/发件）
 
 ---
@@ -41,7 +41,8 @@ powershell -File scripts\sync-rules.ps1 -Check
 | AI 工具 | 放到哪里 | 说明 |
 |--------|---------|------|
 | **Claude Code** | `~/.claude/CLAUDE.md` | 用户级全局配置，所有项目生效 |
-| **CodeBuddy** | `~/.codebuddy/CODEBUDDY.md`（另有 `~/.codebuddy/CLAUDE.md` 兼容副本，同内容硬链接） | 用户级全局配置，所有项目生效；CodeBuddy 官方文档只认项目根 CODEBUDDY.md，用户级按同构惯例挂载 |
+| **CodeBuddy** | ~~`~/.codebuddy/rules/core-discipline.md`~~（原用户级唯一通道，frontmatter + F 源正文副本） | **2026-10-21 CodeBuddy CN 卸载退出**：本仓库不再生成/检查该副本，磁盘上残留的那份不删除也不再管 |
+| **OpenCode** | `~/.config/opencode/AGENTS.md` | 全局规则文件，2026-10-21 接入硬链接组（第 7 个成员，与 `.claude/CLAUDE.md` 同 inode）；该文件缺失时 OpenCode 会回退读 `~/.claude/CLAUDE.md`，先命中者胜 |
 | **Codex (OpenAI)** | 设置 → Instructions → 粘贴进去 | 全局 system prompt |
 | **Cursor** | `~/.cursorrules` | 全局规则文件 |
 | **Windsurf** | `~/.windsurfrules` | 全局规则文件 |
