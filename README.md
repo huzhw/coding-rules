@@ -2,7 +2,7 @@
 
 ## 📌 九目录同步说明
 
-本仓库作为**内容源**统一向 9 个目录分发（8 个用户级目录 + 本仓库自身 F 盘）：`.claude` / `.zcode` / `.codex` / `.dsh` / `.qoder-cn` / `.minimax` / `.workbuddy` / `.config/opencode`（C 盘，硬链接组 + junction；`.minimax` 为 MiniMax Code，仅规则分发；`.workbuddy` 为规则手工副本；`.config/opencode` 为 OpenCode，2026-10-21 接入，仅规则硬链接组——它自己已发现 `~/.claude/skills`，技能不再挂 junction）。CodeBuddy（`.codebuddy`）已于 2026-10-21 卸载退出同步，不再向其分发规则副本。自研技能 14 个已全部直连 F 仓库；规则文件为 C 盘硬链接组 + F 源。
+本仓库作为**内容源**统一向 9 个目录分发（8 个用户级目录 + 本仓库自身 F 盘）：`.claude` / `.zcode` / `.codex` / `.dsh` / `.qoder-cn` / `.minimax` / `.workbuddy` / `.config/opencode`（C 盘，硬链接组 + junction；`.minimax` 为 MiniMax Code，仅规则分发；`.workbuddy` 为规则手工副本；`.config/opencode` 为 OpenCode，2026-10-21 接入，仅规则硬链接组——它自己已发现 `~/.claude/skills`，技能不再挂 junction）。CodeBuddy（`.codebuddy`）已于 2026-10-21 卸载退出同步，不再向其分发规则副本。自研技能 21 个已全部直连 F 仓库；规则文件为 C 盘硬链接组 + F 源。
 
 **完整同步模型、脚本用法、回滚方法见 [SYNC说明.md](SYNC说明.md)**。常用：
 

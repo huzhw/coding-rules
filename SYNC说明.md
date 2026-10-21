@@ -21,7 +21,7 @@
 
 每个工具全局 `skills` 目录下的**自研技能**都是指向 `F:\...\idea-workspase-skills\<仓库>\[子技能]` 的 **junction**（跨盘无需管理员特权，改 F 即全局生效）。
 
-### 自研技能清单（18 项）
+### 自研技能清单（21 项）
 
 | 全局技能名 | 指向（junction） |
 |---|---|
@@ -38,23 +38,26 @@
 | `daily-record-gitlab-md` | `F:\idea-workspase-skills\daily-record-gitlab-md` |
 | `deepseek-harness-plugin-doctor` | `F:\idea-workspase-skills\deepseek-harness-plugin-doctor` |
 | `deepseek-harness-settings-curator` | `F:\idea-workspase-skills\deepseek-harness-settings-curator` |
+| `dev-env-upgrade` | `F:\idea-workspase-skills\dev-env-upgrade` |
 | `frontend-design` | `F:\idea-workspase-skills\frontend-design` |
 | `git-commit` | `F:\idea-workspase-skills\claude-git-commit-skill\git-commit` |
+| `prd` | `F:\idea-workspase-skills\prd` |
+| `ralph` | `F:\idea-workspase-skills\ralph` |
 | `reread-rules` | `F:\idea-workspase-skills\reread-rules` |
 | `ui-ux-pro-max` | `F:\idea-workspase-skills\ui-ux-pro-max` |
 | `web-design-guidelines` | `F:\idea-workspase-skills\web-design-guidelines` |
 
-### 各全局 skills 目录的 junction 数量（校验基线，2026-10-11 实测）
+### 各全局 skills 目录的 junction 数量（校验基线，2026-10-21 实测）
 
-| 全局目录 | 自研 18 个 | 官方 builtin | 说明 |
+| 全局目录 | 自研 21 个 | 官方 builtin | 说明 |
 |---|---|---|---|
-| `.claude\skills` | ✅ 18 | 29 个真实目录 | 官方技能在 claude 目录是**真实独立目录**（非 junction） |
-| `.dsh\skills` | ✅ 18 | 无 | 纯自研 |
-| `.codex\skills` | ✅ 18 | `.system\`（6 个内置） | 无需动 |
-| `.zcode\skills` | ✅ 18 | 33 个 `-> .claude\skills\...` junction | 官方技能**保持绕道 claude**（用户指示不用管） |
-| `.qoder-cn\skills` | ✅ 18 | 无 | 纯自研（2026-10-11 由 `.qoder` 换端） |
+| `.claude\skills` | ✅ 21 | 29 个真实目录 | 官方技能在 claude 目录是**真实独立目录**（非 junction） |
+| `.dsh\skills` | ✅ 21 | 无 | 纯自研 |
+| `.codex\skills` | ✅ 21 | `.system\`（6 个内置） | 无需动 |
+| `.zcode\skills` | ✅ 21 | 33 个 `-> .claude\skills\...` junction | 官方技能**保持绕道 claude**（用户指示不用管） |
+| `.qoder-cn\skills` | ✅ 21 | 无 | 纯自研（2026-10-11 由 `.qoder` 换端） |
 
-> **约定**：zcode 的 33 个官方 builtin（`api-and-interface-design` 等）继续`-> C:\...\.claude\skills\...`，**不迁移**，只保证其目标真实存在。zcode 的自研 18 个自 2026-08-31 起全部直连 F。
+> **约定**：zcode 的 33 个官方 builtin（`api-and-interface-design` 等）继续`-> C:\...\.claude\skills\...`，**不迁移**，只保证其目标真实存在。zcode 的自研 21 个自 2026-08-31 起全部直连 F（2026-10-21 补入 `dev-env-upgrade` / `prd` / `ralph`）。
 
 ### 检查 & 重建脚本
 
@@ -64,7 +67,7 @@
 # 校验（只检查不修改，输出 [OK]/[误]/[缺]）
 powershell -File scripts\sync-skills.ps1
 
-# 校验并修复（删除旧链接重建，仅动 18 项自研，官方不碰）
+# 校验并修复（删除旧链接重建，仅动 21 项自研，官方不碰）
 powershell -File scripts\sync-skills.ps1 -Fix
 
 # 只看某目录
@@ -170,7 +173,7 @@ rd "C:\Users\Administrator\.codex\skills\code-check"
 rd "C:\Users\Administrator\.zcode\skills\code-check"
 rd "C:\Users\Administrator\.qoder-cn\skills\code-check"
 ```
-> `rd` 不加 `/s` 只删链接不删 F 源。18 项技能按清单逐个处理。
+> `rd` 不加 `/s` 只删链接不删 F 源。21 项技能按清单逐个处理。
 
 ### 规则硬链接组重建
 ```bat

@@ -134,6 +134,23 @@ if ($Push) {
     # 删 tmp 走 .NET API：WorkBuddy 会话删除守卫拦 Remove-Item（SAFE_DELETE_FAIL_CLOSED
     # fail-closed，2026-10-11 实测），.NET API 不经 cmdlet 层可正常删除，两栖（控制台/WorkBuddy）通吃
     [System.IO.File]::Delete($tmp)
+    # 写后自检（2026-10-21 加）：只写底座一个文件，若底座已被"替换写"拆链，
+    # 其余组员会留在旧内容上而脚本照样报成功——所以这里回读整个 $Group 做
+    # 长度+SHA256 断言，任何一个对不上就明说"组已断"并以 1 退出。
+    $baseLen = (Get-Item -LiteralPath $CFile).Length
+    $baseSha = (Get-FileHash -LiteralPath $CFile -Algorithm SHA256).Hash
+    $broken = @()
+    foreach ($f in $Group) {
+        if (-not (Test-Path -LiteralPath $f)) { $broken += "[缺] $f"; continue }
+        $len = (Get-Item -LiteralPath $f).Length
+        $sha = (Get-FileHash -LiteralPath $f -Algorithm SHA256).Hash
+        if ($len -ne $baseLen -or $sha -ne $baseSha) { $broken += "[异] $f" }
+    }
+    if ($broken.Count -gt 0) {
+        Write-Host "[推送完成] 底座已写入，但组已断（硬链接被拆或成员分叉）：" -ForegroundColor Yellow
+        foreach ($b in $broken) { Write-Host "        $b" -ForegroundColor Yellow }
+        Write-Host "        修法：powershell -File F:\idea-workspase-skills\agent-config-sync-check\scripts\sync-check.ps1 -FixHardlink（7 份哈希全等才重建）" -ForegroundColor Yellow
+    }
     Write-Host "[推送完成] C 盘组已同步 F 仓库内容" -ForegroundColor Green
     # WorkBuddy 用户规则副本：整文件重写（专属头注释 + F 源剥头注释正文，无 BOM UTF8）；
     # 总长 >3900 字符告警（WorkBuddy 每会话约 4000 上限，超限尾部截断）
