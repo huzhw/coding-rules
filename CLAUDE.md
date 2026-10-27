@@ -21,6 +21,7 @@
 - 所有下载文件统一放到 **`N:\文件下载\ai自动下载\`**
 - **下载前先看来源**：国外源优先国内镜像（一个挂了换下一个）。pip/uv → 阿里云 `https://mirrors.aliyun.com/pypi/simple/`、清华 `https://pypi.tuna.tsinghua.edu.cn/simple/`；npm → 淘宝 `https://registry.npmmirror.com`；rustup → 清华 `https://mirrors.tuna.tsinghua.edu.cn/rustup/`、cargo → rsproxy `https://rsproxy.cn/`；GitHub 自动走本机 v2rayN 代理（git 已全局配置），不通退回 `https://ghproxy.net/` 前缀
 - **数据库操作统一用 DBX MCP**（达梦/MySQL/Oracle/PostgreSQL/Kingbase 全走 `dbx_*` 工具；连接已在 DBX 桌面端 `D:\tools\DBX\dbx.exe` 配好），禁止在各项目 `.mcp.json` 里单独配数据库 MCP
+- **MCP 工具统一由本地网关提供**：codegraph / dbx / context7 由常驻服务 `mcp-gateway`（`127.0.0.1:18800`）一次拉起、各端共用，客户端只登记一个 stdio 桥（工具名形如 `codegraph__codegraph_explore`）；要不要开、哪里看状态 → 面板「扩展中心 → MCP 网关」。别再往各端单独塞这三个服务的 stdio 配置（每端多占约 500 MB，且会话重复拉起）
 - **读/写 Excel 用 `officecli`**：`view ... text --json` 读，`create/batch/set/add` 写，不写 Python 脚本
 - **JSON 用 `jq`**：`curl ... | jq .` 格式化、`jq '.data[].NAME'` 取字段
 - **调 HTTP 用 `xh`**（替代 curl，JSON 自动美化）：`xh :8080/api/list page=1`
