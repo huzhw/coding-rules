@@ -15,13 +15,13 @@
 ## 环境约束
 - 所有代码统一用 **IntelliJ IDEA 2026.2.1** 编写
 - 已装 **nvm/pyenv/g/rustup**（分别管 Node/Python/Go/Rust）；升级或切换版本**必须**走它们，**禁止**直接安装或覆盖系统级运行时
-- **Git 装在 `F:\Program Files (x86)\Git`（2026-10-15 换盘，旧 C 盘安装已不存在）**：2026-10-20 已把 `...\Git\bin` 插到用户 PATH 最前（新开进程裸 `bash` 恢复 Git Bash；此前命中 WSL 存根）。**hook / 脚本调 Git Bash 仍一律绝对路径加引号**（`"F:\Program Files (x86)\Git\bin\bash.exe"`）；Claude Code 另认 `CLAUDE_CODE_GIT_BASH_PATH`。**脚本里的 node 别用 `F:\nodejs\node.exe`（nvm 符号链接），钉 `F:\nvm\<版本>\node.exe`**。详见 `agent-config-sync-check\HOOKS说明.md`「Git 换安装路径事故与解释器红线」
+- **Git 装在 `F:\Program Files (x86)\Git`**（旧 C 盘安装已不存在，其 `bin` 已插在用户 PATH 最前）：hook / 脚本调 Git Bash 一律绝对路径加引号（`"F:\Program Files (x86)\Git\bin\bash.exe"`），Claude Code 另认 `CLAUDE_CODE_GIT_BASH_PATH`；**脚本里的 node 别用 `F:\nodejs\node.exe`（nvm 符号链接），钉 `F:\nvm\<版本>\node.exe`**。详见 `agent-config-sync-check\HOOKS说明.md`
 - Java 统一 **1.8**（语法/API 都按 1.8）
-- **Maven 配置跑 `mvninfo`**（MAVEN_HOME/生效 settings.xml/localRepository/镜像）；仓库路径以 `localRepository` 为准，**不要硬编码**
+- **Maven 配置跑 `mvninfo`**；仓库路径以 `localRepository` 为准，**不要硬编码**
 - 所有下载文件统一放到 **`N:\文件下载\ai自动下载\`**
-- **下载前先看来源**：国外源优先国内镜像（一个挂了换下一个）。pip/uv → 阿里云 `https://mirrors.aliyun.com/pypi/simple/`、清华 `https://pypi.tuna.tsinghua.edu.cn/simple/`；npm → 淘宝 `https://registry.npmmirror.com`；rustup → 清华 `https://mirrors.tuna.tsinghua.edu.cn/rustup/`、cargo → rsproxy `https://rsproxy.cn/`；GitHub 自动走本机 v2rayN 代理（git 已全局配置），不通退回 `https://ghproxy.net/` 前缀
+- **下载前先看来源**：国外源优先国内镜像。pip/uv → 阿里云 `https://mirrors.aliyun.com/pypi/simple/`、清华 `https://pypi.tuna.tsinghua.edu.cn/simple/`；npm → `https://registry.npmmirror.com`；rustup → `https://mirrors.tuna.tsinghua.edu.cn/rustup/`；cargo → `https://rsproxy.cn/`；GitHub 走本机 v2rayN 代理（git 已全局配置），不通退回 `https://ghproxy.net/` 前缀
 - **数据库操作统一用 DBX MCP**（达梦/MySQL/Oracle/PostgreSQL/Kingbase 全走 `dbx_*` 工具；连接已在 DBX 桌面端 `D:\tools\DBX\dbx.exe` 配好），禁止在各项目 `.mcp.json` 里单独配数据库 MCP
-- **MCP 工具统一由本地网关提供**：codegraph / dbx / context7 由常驻服务 `mcp-gateway`（`127.0.0.1:18800`）一次拉起、各端共用，客户端只登记一个 stdio 桥（工具名形如 `codegraph__codegraph_explore`）；要不要开、哪里看状态 → 面板「扩展中心 → MCP 网关」。别再往各端单独塞这三个服务的 stdio 配置（每端多占约 500 MB，且会话重复拉起）
+- **MCP 工具统一由本地网关提供**：codegraph / dbx / context7 / ssh 由常驻服务 `mcp-gateway`（`127.0.0.1:18800`）一次拉起、各端只登记一个 stdio 桥（ZCode 项目级 ssh 登记暂留）；别再逐端塞这几个服务的 stdio 配置。状态看面板「扩展中心 → MCP 网关」
 - **读/写 Excel 用 `officecli`**：`view ... text --json` 读，`create/batch/set/add` 写，不写 Python 脚本
 - **JSON 用 `jq`**：`curl ... | jq .` 格式化、`jq '.data[].NAME'` 取字段
 - **调 HTTP 用 `xh`**（替代 curl，JSON 自动美化）：`xh :8080/api/list page=1`
@@ -44,7 +44,7 @@
 - 写代码前按顺序复用：①标准库自带就用 → ②平台原生功能（OS/框架/中间件）就用 → ③pom.xml/requirements.txt 已装依赖就用（Java项目优先Hutool） → ④以上都不行，搜开源方案列出来让我选
 - 只改任务要求的，不顺手优化碰到的代码
 - 编辑文件前先读，出问题先看日志别猜，修根因不修症状：追溯所有调用方，在共享层一次修好
-- **循环内禁止重复查库**：已查出来的数据在内存里用，循环内不准逐条查库。循环外批量查询→内存分组计算→批量写回。HTTP等外部IO确实无法批量的可例外，但需在方案里说明
+- **循环内禁止重复查库**：循环外批量查询→内存分组计算→批量写回。HTTP等外部IO确实无法批量的可例外，但需在方案里说明
 - **别当舔狗**：我有错直接指出，坏主意用技术理由反驳。不确定就说不知道，别胡编
 - **方案必须分析风险**：非平凡改动列出至少 1 个具体失败模式 + 怎么防，高风险改动 2 个以上
 - **git 提交用 skill**：任何 git commit/push 必须先 `Skill("git-commit")`，逐文件 stage、中文标题、原子提交，禁止 `git add . && git commit`。相关改动攒齐统一提交，别改一行提一次。提交前必须等我确认
