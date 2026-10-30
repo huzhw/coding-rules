@@ -9,7 +9,7 @@
 #       .config\opencode 端 = OpenCode，2026-10-21 接入，全局规则 = ~/.config/opencode/AGENTS.md，
 #       该文件不存在时 opencode 会回退吃 ~/.claude/CLAUDE.md，建了它就顶替那条回退、内容同组正文），
 #       并生成/刷新 WorkBuddy 用户级记忆副本
-#       （~\.workbuddy\user-<id>-personal\MEMORY.md = 专属头注释 + F 源剥头注释正文；
+#       （~\.workbuddy\user-<id>-personal\MEMORY.md = 专属头注释 + workbuddy-精简版.md 正文；
 #       2026-10-11 接入，拷贝端非硬链接；该文件是 WorkBuddy 跨项目记忆，每会话约
 #       4000 字符上限，-Push 总长超 3900 告警）。
 #       历史注记：2026-10-21 CodeBuddy CN 卸载，本脚本不再生成/检查
@@ -43,7 +43,7 @@ $Group  = @(
     "C:\Users\Administrator\.config\opencode\AGENTS.md"
 )
 
-# WorkBuddy 用户级记忆副本（拷贝端，非硬链接）：专属头注释固定不变，正文 = F 源剥掉开头
+# WorkBuddy 用户级记忆副本（拷贝端，非硬链接）：专属头注释固定不变，正文 = workbuddy-精简版.md
 # <!-- --> 头注释后的组正文。该文件同时是 WorkBuddy 的跨项目记忆文件，每会话约 4000 字符
 # 上限、超限尾部截断——-Push 时总长 >3900 黄字告警。用户若直改正文会被下次 -Push 覆盖
 # （与 C 盘组同一条红线）；漂移由 agent-config-sync-check 的 RulesCopyDrift 看管（-Fix
@@ -110,13 +110,19 @@ if ($Check) {
         $wbText = [IO.File]::ReadAllText($WB_MEMORY)
         $wbHead = [regex]::Match($wbText, '(?s)\A\s*<!--.*?-->\s*')
         if ($wbHead.Success) { $wbText = $wbText.Substring($wbHead.Length) }
-        $wbSrc = (Get-Content -LiteralPath $F_MAIN -Raw -Encoding UTF8)
+        # 期望正文：优先 workbuddy-精简版.md（WorkBuddy 每会话约 4000 字符上限），缺省回退 F 源
+        $WB_BRIEF = Join-Path (Split-Path -Parent $F_MAIN) "workbuddy-精简版.md"
+        if (Test-Path -LiteralPath $WB_BRIEF) {
+            $wbSrc = [IO.File]::ReadAllText($WB_BRIEF, [Text.Encoding]::UTF8)
+        } else {
+            $wbSrc = (Get-Content -LiteralPath $F_MAIN -Raw -Encoding UTF8)
+        }
         $srcHead = [regex]::Match($wbSrc, '(?s)\A\s*<!--.*?-->\s*')
         if ($srcHead.Success) { $wbSrc = $wbSrc.Substring($srcHead.Length) }
         if ($wbText.Trim() -eq $wbSrc.Trim()) {
-            Write-Host "[OK]  WorkBuddy 用户规则副本 == F 仓库（正文一致）" -ForegroundColor Green
+            Write-Host "[OK]  WorkBuddy 用户规则副本 == workbuddy-精简版.md（正文一致）" -ForegroundColor Green
         } else {
-            Write-Host "[异]  WorkBuddy 用户规则副本与 F 仓库不同（跑 -Push 同步）" -ForegroundColor Yellow
+            Write-Host "[异]  WorkBuddy 用户规则副本与 workbuddy-精简版.md 不同（跑 -Push 同步）" -ForegroundColor Yellow
         }
     }
 }
@@ -152,13 +158,20 @@ if ($Push) {
         Write-Host "        修法：powershell -File F:\idea-workspase-skills\agent-config-sync-check\scripts\sync-check.ps1 -FixHardlink（7 份哈希全等才重建）" -ForegroundColor Yellow
     }
     Write-Host "[推送完成] C 盘组已同步 F 仓库内容" -ForegroundColor Green
-    # WorkBuddy 用户规则副本：整文件重写（专属头注释 + F 源剥头注释正文，无 BOM UTF8）；
+    # WorkBuddy 用户规则副本：整文件重写（专属头注释 + 正文，无 BOM UTF8）。
     # 总长 >3900 字符告警（WorkBuddy 每会话约 4000 上限，超限尾部截断）
-    $wbBody = [regex]::Replace($content, '(?s)\A\s*<!--.*?-->\s*', '')
+    $WB_BRIEF = Join-Path (Split-Path -Parent $F_MAIN) "workbuddy-精简版.md"
+    if (Test-Path -LiteralPath $WB_BRIEF) {
+        # 正文 = 精简版（WorkBuddy 每会话约 4000 字符上限，F 源全量正文加头注释必定超限截断）
+        $wbBody = ([IO.File]::ReadAllText($WB_BRIEF, [Text.Encoding]::UTF8)).Trim()
+    } else {
+        # 回退：F 源剥掉开头 <!-- --> 头注释后的组正文
+        $wbBody = [regex]::Replace($content, '(?s)\A\s*<!--.*?-->\s*', '')
+    }
     $wbFull = $WB_HEADER + "`r`n`r`n" + $wbBody
     [System.IO.File]::WriteAllText($WB_MEMORY, $wbFull, (New-Object System.Text.UTF8Encoding($false)))
     Write-Host "[推送完成] WorkBuddy 用户规则副本已生成: $WB_MEMORY" -ForegroundColor Green
     if ($wbFull.Length -gt 3900) {
-        Write-Host "[警告] WorkBuddy 副本总长 $($wbFull.Length) 字符，超 3900 安全线（每会话约 4000 上限，尾部会被截断），请精简 F 源正文" -ForegroundColor Yellow
+        Write-Host "[警告] WorkBuddy 副本总长 $($wbFull.Length) 字符，超 3900 安全线（每会话约 4000 上限，尾部会被截断），请精简 workbuddy-精简版.md" -ForegroundColor Yellow
     }
 }
