@@ -100,6 +100,18 @@ foreach ($SkillsDir in $Targets) {
         $link   = Join-Path $SkillsDir $name
         $needLink = $false
 
+        # 2026-10-30 事故教训：目标目录为空时拒绝建/修链接 —— 否则等于把链接
+        # "修复"到一个新的空仓库上，把内容连同事故一起钉死。空 = 先恢复内容。
+        if (-not (Test-Path -LiteralPath $target)) {
+            Write-Host "  [拒修] $name  目标不存在: $target" -ForegroundColor Red
+            continue
+        }
+        $fileCount = @(Get-ChildItem $target -Recurse -File -Force -ErrorAction SilentlyContinue).Count
+        if ($fileCount -eq 0) {
+            Write-Host "  [空]  $name  目标目录 0 文件，拒绝建/修链接（技能内容缺失，先恢复再跑）" -ForegroundColor Red
+            continue
+        }
+
         if (Test-Path -LiteralPath $link) {
             $tgt = Get-JunctionTarget $link
             if ($tgt -and $tgt.TrimEnd('\') -eq $target.TrimEnd('\')) {
