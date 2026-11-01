@@ -19,11 +19,14 @@ shopt -s nocasematch
 #                           DROP/TRUNCATE、无 WHERE 的 DELETE/UPDATE、
 #                           chmod -R 777 / chown -R / chmod -r 000、
 #                           find -delete/-exec/-ok、mkfs/fdisk/fork bomb
-#   SAFE    安全目标（放行） 递归 rm 指向构建/缓存/输出目录（target/ node_modules/
-#                           dist/ build/ out/ classes/ logs/ package/ __pycache__/
-#                           .pytest_cache/.coverage/.mypy_cache/.venv/venv、*.pyc，
-#                           末级目录同名即算）或临时区（/tmp、/x/temp、X:\Temp、
-#                           %LOCALAPPDATA%\Temp、C:\Windows\Temp 的下一层及更深）
+#   SAFE    安全目标（放行） 递归 rm 指向项目内构建/缓存/输出目录（target/ node_modules/
+#                           dist/ build/ out/ classes/ logs/ coverage/ __pycache__/
+#                           .pytest_cache/.coverage/.mypy_cache/.ruff_cache/
+#                           .venv/venv/.cache/.turbo/.next/.nuxt/.output/.svelte-kit/
+#                           .angular/.tox/.nox/htmlcov/obj、*.pyc；末级同名 + 物理路径
+#                           在项目内才放行）或临时区（/tmp、/x/temp、X:\Temp、
+#                           %LOCALAPPDATA%\Temp、C:\Windows\Temp 的下一层及更深）；
+#                           尾斜杠+链接（rm -rf link/ 穿透）与家目录目标一律拒
 #   PASS    常态放行         taskkill /f、net stop/start、sc stop/start；
 #                           非递归 rm（不带 -r/-R）不归本规则管
 #
@@ -69,15 +72,18 @@ STRIPPED=$(printf '%s' "$COMMAND" | awk '
 # ---- DANGER P0: 递归删除（rm 带 -r/-R） ----
 # 非递归 rm 不在本规则内（单文件删除交给权限模式）。
 # 递归 rm 的每个目标独立判定（词法切分、逐目标，不粘串）：
-#   ① 构建/缓存/输出白名单（末级目录同名即放行，相对/绝对均可）
+#   ① 构建/缓存/输出白名单（末级同名 + 项目内 + 物理路径不穿链接才放行）
 #   ② 临时区（/tmp、/x/temp、%LOCALAPPDATA%\Temp、C:\Windows\Temp 的下一层及更深）
 #   ③ 项目内目标（当前目录下，相对或绝对）→ 移入隔离区后拒（可原样搬回）
 #   ④ 其余（系统绝对路径、根/家/上级路径/通配/变量）→ 直接拒，不移动
+# 防穿透：rm -rf 链接目录/（尾斜杠）会顺 junction 删目标内容（实测复现），
+#   白名单放行前必须过 check_no_link_traversal（尾斜杠+链接拒、realpath 出界拒）
 # 隔离区默认 X:/隔离区（GUARD_QUARANTINE_DIR 可改）；每次隔离顺手清
 #   GUARD_QUARANTINE_DAYS（默认 14）天前旧条目，并压到 GUARD_QUARANTINE_MAX_MB（默认 10240）MB 内
 QROOT_DEFAULT="X:/隔离区"
 # 项目根：优先客户端注入的变量，其次进程 PWD（相对路径与隔离范围都以它为基准）
 PROJ_DIR="${CLAUDE_PROJECT_DIR:-${ZCODE_PROJECT_DIR:-$PWD}}"
+PROJ_NORM=$(printf '%s' "$PROJ_DIR" | tr '\\' '/')
 
 qroot_path() {
   local q="${GUARD_QUARANTINE_DIR:-$QROOT_DEFAULT}"
@@ -154,45 +160,94 @@ is_wrapper() {
   case "$1" in sudo|doas|command|time|nice|nohup|env|xargs|timeout|stdbuf) return 0 ;; *) return 1 ;; esac
 }
 
+# 目标转绝对路径（不检查存在性）
+to_abs() {
+  local t="$1"
+  case "$t" in
+    /*) printf '%s' "$t" ;;
+    [a-zA-Z]:*) cygpath -u "$t" 2>/dev/null || printf '%s' "$t" ;;
+    *) printf '%s/%s' "$PROJ_NORM" "$t" ;;
+  esac
+}
+
+# 防穿透：① 带尾斜杠的链接目标（rm -rf link/ 会顺链接删目标内容）→ 拒
+#         ② 物理路径（realpath 解析后）跑出项目/临时区（junction 穿透）→ 拒
+check_no_link_traversal() {
+  local t="$1" abs="$2" ends="$3" rp rpp
+  if [ -e "$abs" ] || [ -L "$abs" ]; then
+    if [ "$ends" = "1" ] && [ -L "$abs" ]; then
+      deny_json "危险命令（P0 删除类）被拦截：rm 目标「$t」是链接且带尾斜杠，rm -rf 会穿透链接删掉目标内容，禁止执行。"
+    fi
+    rp=$(realpath -m "$abs" 2>/dev/null)
+    rpp=$(realpath -m "$PROJ_NORM" 2>/dev/null)
+    if [ -n "$rp" ] && [ -n "$rpp" ]; then
+      case "$rp" in
+        "$rpp"/*|/tmp/?*|/x/temp/?*) : ;;
+        *) deny_json "危险命令（P0 删除类）被拦截：rm 目标「$t」的物理路径在项目/临时区之外（疑似 junction 穿透），禁止执行。" ;;
+      esac
+    fi
+  fi
+}
+
 # 目标分类：0=放行（白名单/临时区）；1=待处理（隔离或拒）；硬否决直接 deny 退出
 classify_target() {
-  local t="$1" norm base
+  local t="$1" norm base ends=0 abs pwlc
+  case "$t" in */|*'\') ends=1 ;; esac
   norm=$(printf '%s' "$t" | tr '\\' '/')
   norm=$(printf '%s' "$norm" | tr '[:upper:]' '[:lower:]')
   while [ "${norm%/}" != "$norm" ]; do norm="${norm%/}"; done
   case "$norm" in
     ""|"."|"/"|"~") deny_json "危险命令（P0 删除类）被拦截：rm 目标是空、根目录、当前目录或家目录，禁止执行。" ;;
+    '~'/*) deny_json "危险命令（P0 删除类）被拦截：rm 目标「$t」在家目录下，禁止执行。" ;;
     ..|../*|*/..|*/../*) deny_json "危险命令（P0 删除类）被拦截：rm 目标「$t」含上级路径（..），无法安全判定，禁止执行。" ;;
     *'$'*|*'*'*|*'?'*|*'['*) deny_json "危险命令（P0 删除类）被拦截：rm 目标「$t」含变量或通配符，无法安全隔离，禁止执行。" ;;
   esac
-  # 临时区：根本身拒，下一层及更深放行
+  abs=$(to_abs "$t")
+  # 临时区：根本身拒，下一层及更深（防穿透校验后）放行
   case "$norm" in
     /tmp|/x/temp|x:/temp|c:/windows/temp) deny_json "危险命令（P0 删除类）被拦截：rm 目标是临时区根目录，禁止整目录删除。" ;;
-    /tmp/?*|/x/temp/?*|x:/temp/?*|c:/windows/temp/?*|c:/users/*/appdata/local/temp/?*) return 0 ;;
+    /tmp/?*|/x/temp/?*|x:/temp/?*|c:/windows/temp/?*|c:/users/*/appdata/local/temp/?*)
+      check_no_link_traversal "$t" "$abs" "$ends"
+      return 0 ;;
   esac
-  # 构建/缓存/输出白名单：末级目录同名即放行
+  # 构建/缓存/输出白名单：末级同名 + 项目内 + 防穿透才放行
   base="${norm##*/}"
   case "$base" in
-    target|node_modules|dist|build|out|classes|logs|package|__pycache__|.pytest_cache|.coverage|.mypy_cache|.venv|venv) return 0 ;;
-    *.pyc) return 0 ;;
+    target|node_modules|dist|build|out|classes|logs|coverage|__pycache__|.pytest_cache|.coverage|.mypy_cache|.ruff_cache|.venv|venv|.cache|.turbo|.next|.nuxt|.output|.svelte-kit|.angular|.tox|.nox|htmlcov|obj) ;;
+    *.pyc) ;;
+    *) return 1 ;;
   esac
-  return 1
+  pwlc=$(printf '%s' "$PROJ_NORM" | tr '[:upper:]' '[:lower:]')
+  case "$(printf '%s' "$abs" | tr '[:upper:]' '[:lower:]')" in
+    "$pwlc"/*) ;;
+    *) return 1 ;;
+  esac
+  check_no_link_traversal "$t" "$abs" "$ends"
+  return 0
 }
 
-# 解析为真实路径，且限定"项目内"（PROJ_DIR 前缀）才允许进隔离区
+# 解析为真实路径，且限定"项目内"才允许进隔离区（文本前缀 + 物理路径双校验，防 junction 穿透）
 resolve_in_project() {
-  local t="$1" src pw
+  local t="$1" src rp rpp
   case "$t" in
     /*) src="$t" ;;
     [a-zA-Z]:*) src=$(cygpath -u "$t" 2>/dev/null) || return 1 ;;
-    *) src="$PROJ_DIR/$t" ;;
+    *) src="$PROJ_NORM/$t" ;;
   esac
   [ -e "$src" ] || return 1
-  pw=$(printf '%s' "$PROJ_DIR" | tr '\\' '/')
   case "$src" in
-    "$pw"/*) printf '%s' "$src"; return 0 ;;
+    "$PROJ_NORM"/*) ;;
     *) return 1 ;;
   esac
+  rp=$(realpath -m "$src" 2>/dev/null)
+  rpp=$(realpath -m "$PROJ_NORM" 2>/dev/null)
+  if [ -n "$rp" ] && [ -n "$rpp" ]; then
+    case "$rp" in
+      "$rpp"/*) ;;
+      *) return 1 ;;
+    esac
+  fi
+  printf '%s' "$src"; return 0
 }
 
 evaluate_rm_targets() {
