@@ -3,8 +3,10 @@ export PATH="/usr/bin:/bin:$PATH"
 # =====================================================================
 # 记忆写入守卫（PreToolUse）— 防止 AI 幻觉乱写记忆文件
 #
-# 规则（2026-10-07 目录重构：用户区 memory/ 与 AI 区 memory-ai/ 平级）：
-#   - memory/（用户记录区）：AI 只读，写操作一律 ask 人工确认
+# 规则（用户区 memory/ 与 AI 区 memory-ai/ 平级）：
+#   - memory/（用户记录区）：AI 只读；每会话首次写入 ask 人工确认，
+#     批准后本会话内放行（会话标记 ~/.claude/memory-session-ok/，
+#     由 guard-memory-approved.sh 在写入成功后记账，3 天自动清）
 #   - memory-ai/（AI 自动记录区，项目根、与 memory/ 平级）：
 #       · MEMORY.md 索引           → 放行
 #       · 命名不合规（无 -YYYY-MM-DD 日期后缀）→ deny
@@ -12,13 +14,22 @@ export PATH="/usr/bin:/bin:$PATH"
 #       · 新文件（未批准）         → 放行（AI 区首次写入免确认）
 #   - 其他路径                     → 放行
 #
-# 配套：guard-memory-approved.sh（PostToolUse）负责把写入成功的
-#       memory-ai/ 文件记入 ~/.claude/memory-ai-approved.txt 台账。
+# 配套：guard-memory-approved.sh（PostToolUse）负责两笔记账：
+#       ① memory-ai/ 写入成功的文件 → ~/.claude/memory-ai-approved.txt
+#       ② memory/ 人工批准过的会话 → ~/.claude/memory-session-ok/
 # =====================================================================
 
 IFS= read -r -d '' INPUT || true
 FILE=$(printf '%s' "$INPUT" | jq -r '.tool_input.file_path // empty')
 [ -z "$FILE" ] && exit 0
+
+# 会话标识：优先 hook 输入 JSON 的 session_id，env CLAUDE_SESSION_ID 兜底；
+# 两处都拿不到就退化为「每次 ask」，不放大权限
+SESSION=$(printf '%s' "$INPUT" | jq -r '.session_id // empty')
+[ -z "$SESSION" ] && SESSION="${CLAUDE_SESSION_ID:-}"
+# 只留安全字符再当文件名用（防路径穿越）
+SESSION=${SESSION//[^A-Za-z0-9._-]/_}
+SESSION_OK_DIR="$HOME/.claude/memory-session-ok"
 
 # 归一化路径分隔符（\ → /）
 NORM=${FILE//\\/\/}
@@ -51,7 +62,11 @@ case "$NORM" in
   # ---- memory/：用户记录区，AI 只读 ----
   # 注：旧结构 memory/ai/ 残留路径也落在本分支（视为用户区，人工把关）
   */memory/*|/memory/*|memory/*)
-    printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"ask","permissionDecisionReason":"写入用户记录区 memory/（AI 只读）：%s。确需更新请批准，误写请拒绝。"}}' "$BASE"
+    # 本会话已人工批准过 → 放行（批准记账在 guard-memory-approved.sh）
+    if [ -n "$SESSION" ] && [ -f "$SESSION_OK_DIR/$SESSION" ]; then
+      exit 0
+    fi
+    printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"ask","permissionDecisionReason":"写入用户记录区 memory/（AI 只读）：%s。确需更新请批准（本会话内只需批一次），误写请拒绝。"}}' "$BASE"
     exit 0
     ;;
 
