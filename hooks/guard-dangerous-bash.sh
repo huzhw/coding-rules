@@ -291,10 +291,36 @@ evaluate_rm_targets() {
 
 scan_command() {
   local text="$1" inner
-  # 嵌套命令替换（$(...) 与反引号内层）尽力递归扫描
+  # 嵌套命令替换（$(...) 与反引号内层）尽力递归扫描；引号感知：
+  # 单引号内反引号 / $() 是字面量（不执行）→ 不扫；双引号内会执行 → 照扫
   while IFS= read -r inner; do
     [ -n "$inner" ] && scan_command "$inner"
-  done < <(printf '%s\n' "$text" | grep -oE '\$\([^()]*\)|`[^`]*`' 2>/dev/null | sed -E 's/^\$\(([^()]*)\)$/\1/; s/^`([^`]*)`$/\1/')
+  done < <(printf '%s\n' "$text" | awk '
+  {
+    s = $0; n = length(s); sq = 0
+    for (i = 1; i <= n; i++) {
+      c = substr(s, i, 1)
+      if (sq == 1) { if (c == "\047") sq = 0; continue }
+      if (c == "\\") { i++; continue }
+      if (c == "\047") { sq = 1; continue }
+      if (c == "$" && substr(s, i + 1, 1) == "(") {
+        depth = 1; inner = ""; j = i + 2
+        while (j <= n) {
+          cj = substr(s, j, 1)
+          if (cj == "(") depth++
+          if (cj == ")") { depth--; if (depth == 0) break }
+          inner = inner cj; j++
+        }
+        if (depth == 0) { print inner; i = j; continue }
+        continue
+      }
+      if (c == "\140") {
+        inner = ""; j = i + 1
+        while (j <= n) { cj = substr(s, j, 1); if (cj == "\140") break; inner = inner cj; j++ }
+        if (j <= n) { print inner; i = j; continue }
+      }
+    }
+  }')
 
   local -a toks targets
   mapfile -t toks < <(tokenize "$text")
