@@ -133,6 +133,17 @@ tokenize() {
           print "__SEP__"
           continue
         }
+        if (c == "<" || c == ">") {
+          # 重定向：丢弃 fd 前缀（纯数字 token）与重定向目标（&1、/dev/null、文件名…）
+          if (tok == "" || tok ~ /^[0-9]+$/) { tok = "" }
+          else { print tok; tok = "" }
+          while (i + 1 <= n) {
+            nx = substr($0, i + 1, 1)
+            if (nx == " " || nx == "\t" || nx == "&" || nx == "|" || nx == ";" || nx == "(" || nx == ")") break
+            i++
+          }
+          continue
+        }
         tok = tok c
       } else if (sq == 1) {
         if (c == "\047") sq = 0; else tok = tok c
