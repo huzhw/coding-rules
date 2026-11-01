@@ -236,7 +236,7 @@ AI：不安全。cookie 明文传输，密码应该只在登录请求体中传�
 | 脚本 | 事件（matcher） | 作用 |
 |------|----------------|------|
 | `block-dangerous-git.sh` | PreToolUse（Bash） | git 危险操作拦截：reset --hard、clean、branch -D、checkout/restore .、push --force，及 `git add .`/`-A`/`-a`/`--all` 全部暂存 |
-| `guard-dangerous-bash.sh` | PreToolUse（Bash） | 危险 Bash 命令拦截（不依赖权限模式）：rm 指向非构建/缓存白名单、reg delete、sc delete、shutdown/reboot、bcdedit、DROP/TRUNCATE、无 WHERE 的 DELETE/UPDATE、chmod -R 777/chown -R、find -delete/-exec、mkfs/fdisk/fork bomb 一律 deny；taskkill /f、net stop/start、sc stop/start 放行；rm 指向 target/node_modules/dist/__pycache__ 等构建缓存目录放行 |
+| `guard-dangerous-bash.sh` | PreToolUse（Bash） | 危险 Bash 命令拦截（不依赖权限模式）：递归 rm 逐目标判定——构建/缓存/输出白名单（target/node_modules/dist/__pycache__ 等，末级同名即算）与临时区（/tmp、X:\Temp、%LOCALAPPDATA%\Temp、C:\Windows\Temp 下一层及更深）放行；项目内非白名单目标移入隔离区 `X:/隔离区` 后拒（可原样找回）；系统绝对路径/根/家/上级路径/通配/变量直接拒；reg delete、sc delete、shutdown/reboot、bcdedit、DROP/TRUNCATE、无 WHERE 的 DELETE/UPDATE、chmod -R 777/chown -R、find -delete/-exec、mkfs/fdisk/fork bomb 一律 deny；taskkill /f、net stop/start、sc stop/start 放行；非递归 rm 不归本规则管；隔离区按 14 天 / 10GB 自动清（`GUARD_QUARANTINE_DAYS` / `GUARD_QUARANTINE_MAX_MB` 可调） |
 | `warn-download-location.sh` | PostToolUse（Bash） | 下载落盘提醒：curl/wget/xh 带 `-o`/`--output` 且目标不在 `N:\文件下载\ai自动下载\` 时提醒（仅提醒不拦截） |
 | `guard-memory-write.sh` | PreToolUse（Write\|Edit\|MultiEdit） | 写 `memory/`、`memory-ai/` 前把关：用户区（memory/）每会话首次 ask、批准后本会话放行（看会话标记台账）、AI 区（memory-ai/）新文件放行、命名不合规 deny |
 | `guard-memory-approved.sh` | PostToolUse（Write\|Edit\|MultiEdit） | 两笔记账：① 写入 `memory-ai/` 成功 → 批准台账 `~/.claude/memory-ai-approved.txt`，后续不再打扰；② 写入 `memory/` 成功（即人工已批准）→ 会话标记 `~/.claude/memory-session-ok/`，本会话内用户区不再 ask（标记 3 天自动清） |

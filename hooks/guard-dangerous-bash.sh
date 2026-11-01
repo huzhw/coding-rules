@@ -14,17 +14,18 @@ shopt -s nocasematch
 #                 / allow 规则判定（auto 下由模型分类器决定）
 #
 # 规则分类：
-#   DANGER  危险（硬拦）     rm 指向系统/根目录、reg delete、sc delete、
-#                           bcdedit、shutdown/reboot、DROP/TRUNCATE、
-#                           无 WHERE 的 DELETE/UPDATE、chmod -R 777 /
-#                           chown -R / chmod -r 000、find -delete/-exec/-ok、
-#                           mkfs/fdisk/fork bomb
-#   SAFE    安全目标（放行） rm 指向项目内构建/缓存/输出目录，包含：
-#                           target/ node_modules/ dist/ build/ out/
-#                           classes/ logs/ *.pyc __pycache__ .pytest_cache
-#                           .coverage .mypy_cache .venv venv package/
-#   PASS    常态放行         taskkill /f、net stop/start、sc stop/start
-#                           （可逆的运维命令，不硬拦）
+#   DANGER  危险（硬拦）     递归 rm 的非白名单目标（项目内目标先移入隔离区再拒）、
+#                           reg delete、sc delete、bcdedit、shutdown/reboot、
+#                           DROP/TRUNCATE、无 WHERE 的 DELETE/UPDATE、
+#                           chmod -R 777 / chown -R / chmod -r 000、
+#                           find -delete/-exec/-ok、mkfs/fdisk/fork bomb
+#   SAFE    安全目标（放行） 递归 rm 指向构建/缓存/输出目录（target/ node_modules/
+#                           dist/ build/ out/ classes/ logs/ package/ __pycache__/
+#                           .pytest_cache/.coverage/.mypy_cache/.venv/venv、*.pyc，
+#                           末级目录同名即算）或临时区（/tmp、/x/temp、X:\Temp、
+#                           %LOCALAPPDATA%\Temp、C:\Windows\Temp 的下一层及更深）
+#   PASS    常态放行         taskkill /f、net stop/start、sc stop/start；
+#                           非递归 rm（不带 -r/-R）不归本规则管
 #
 # 注意（P2）：SQL 语句常以引号字符串出现（mysql -e "DROP TABLE t1"），
 #      不能走 STRIPPED（引号内会被剥掉 → 漏拦），必须用原始 COMMAND 匹配。
@@ -65,33 +66,233 @@ STRIPPED=$(printf '%s' "$COMMAND" | awk '
 }
 ')
 
-# ---- DANGER P0: 直接删数据（rm 危险目标 / find 批量删） ----
-# 白名单优先：只有项目内构建/缓存/输出目录才放行，其余（含 /tmp、~/、系统目录、
-# 未列入白名单的任意路径）一律 deny。宁可误拦不可漏拦，
-# 因为 rm -rf 不可逆，而构建目录清缓存属于最常见且低风险操作。
-# 目标先归一化：小写、去尾斜杠（支持 ./target / target/ / target 三种写法）
-SAFE_RM_DIR='^(\./)?(target|node_modules|dist|build|out|classes|logs|package|__pycache__|\.pytest_cache|\.coverage|\.mypy_cache|\.venv|venv)(/|$)|\.pyc$'
-if [[ "$STRIPPED" =~ (^|[[:space:]]|/)rm([[:space:]]|$).*(-[a-z]*[rR][a-z]*) ]]; then
-  # 取 rm 后面的目标（去掉 rm 本体及 -r/-f/-rf/-R 等选项）
-  RM_TARGET=$(printf '%s' "$STRIPPED" | sed -E 's/.*(^|[[:space:]])rm([[:space:]]|$)//')
-  RM_TARGET=$(printf '%s' "$RM_TARGET" | sed -E 's/^-[rRfF]+//')
-  RM_TARGET=$(printf '%s' "$RM_TARGET" | tr -d '[:space:]')
-  # 归一化：小写 + 去掉末尾斜杠（相对路径 ./ 前缀保留以便白名单判定）
-  RM_TARGET_LC=$(printf '%s' "$RM_TARGET" | tr '[:upper:]' '[:lower:]')
-  RM_TARGET_LC=${RM_TARGET_LC%/}
-  if [ -z "$RM_TARGET_LC" ] || [[ "$RM_TARGET_LC" =~ ^(\.\.|/|[a-z]:|~) ]]; then
-    printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"危险命令（P0 删除类）被拦截：rm 目标 %s 为空或为绝对/上级路径，禁止执行。"}}' "$(json_escape "$RM_TARGET")"
-    exit 0
-  fi
-  # 白名单：项目内构建/缓存/输出目录 → 放行
-  if [[ "$RM_TARGET_LC" =~ $SAFE_RM_DIR ]]; then
-    printf '{"continue":true}'
-    exit 0
-  fi
-  # 其余（未列入白名单的相对/绝对路径）一律 deny
-  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"危险命令（P0 删除类）被拦截：rm 目标 %s 不在构建/缓存/输出白名单，且非本次确认的安全操作。如需删除请精确指定已确认的路径。"}}' "$(json_escape "$RM_TARGET")"
+# ---- DANGER P0: 递归删除（rm 带 -r/-R） ----
+# 非递归 rm 不在本规则内（单文件删除交给权限模式）。
+# 递归 rm 的每个目标独立判定（词法切分、逐目标，不粘串）：
+#   ① 构建/缓存/输出白名单（末级目录同名即放行，相对/绝对均可）
+#   ② 临时区（/tmp、/x/temp、%LOCALAPPDATA%\Temp、C:\Windows\Temp 的下一层及更深）
+#   ③ 项目内目标（当前目录下，相对或绝对）→ 移入隔离区后拒（可原样搬回）
+#   ④ 其余（系统绝对路径、根/家/上级路径/通配/变量）→ 直接拒，不移动
+# 隔离区默认 X:/隔离区（GUARD_QUARANTINE_DIR 可改）；每次隔离顺手清
+#   GUARD_QUARANTINE_DAYS（默认 14）天前旧条目，并压到 GUARD_QUARANTINE_MAX_MB（默认 10240）MB 内
+QROOT_DEFAULT="X:/隔离区"
+# 项目根：优先客户端注入的变量，其次进程 PWD（相对路径与隔离范围都以它为基准）
+PROJ_DIR="${CLAUDE_PROJECT_DIR:-${ZCODE_PROJECT_DIR:-$PWD}}"
+
+qroot_path() {
+  local q="${GUARD_QUARANTINE_DIR:-$QROOT_DEFAULT}"
+  case "$q" in /*|[a-zA-Z]:/*) printf '%s' "$q" ;; *) printf '%s' "$QROOT_DEFAULT" ;; esac
+}
+
+prune_quarantine() {
+  local q days maxmb sz oldest
+  q=$(qroot_path)
+  days="${GUARD_QUARANTINE_DAYS:-14}"
+  maxmb="${GUARD_QUARANTINE_MAX_MB:-10240}"
+  case "$q" in ""|"/") return 0 ;; esac
+  [ -d "$q" ] || return 0
+  # 只碰隔离区下一层，路径钉死
+  find "$q" -mindepth 1 -maxdepth 1 -type d -mtime +"$days" -exec rm -rf {} + 2>/dev/null
+  # 容量上限：超了按最旧先删
+  while :; do
+    sz=$(du -sm "$q" 2>/dev/null | cut -f1)
+    [ -z "$sz" ] && break
+    [ "$sz" -le "$maxmb" ] && break
+    oldest=$(ls -1d "$q"/*/ 2>/dev/null | head -1)
+    [ -z "$oldest" ] && break
+    rm -rf "$oldest" 2>/dev/null
+  done
+}
+
+deny_json() {
+  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}' "$(json_escape "$1")"
   exit 0
-fi
+}
+
+# 词法切分：保留引号内容（去引号），命令分隔符输出 __SEP__；每行结束补 __SEP__
+tokenize() {
+  printf '%s\n' "$1" | awk '
+  {
+    n = length($0); tok = ""; sq = 0; dq = 0; bt = 0
+    for (i = 1; i <= n; i++) {
+      c = substr($0, i, 1)
+      if (sq == 0 && dq == 0 && bt == 0) {
+        if (c == "\\") { if (i + 1 <= n) { tok = tok substr($0, i + 1, 1); i++ } ; continue }
+        if (c == "\047") { sq = 1; continue }
+        if (c == "\042") { dq = 1; continue }
+        if (c == "\140") { bt = 1; continue }
+        if (c == " " || c == "\t") { if (tok != "") { print tok; tok = "" } ; continue }
+        if (c == "&" || c == "|" || c == ";" || c == "(" || c == ")") {
+          if (tok != "") { print tok; tok = "" }
+          print "__SEP__"
+          continue
+        }
+        tok = tok c
+      } else if (sq == 1) {
+        if (c == "\047") sq = 0; else tok = tok c
+      } else if (dq == 1) {
+        # 双引号内反斜杠只对 " \ $ ` 与换行有转义语义，其余字符保留反斜杠本身
+        if (c == "\\") {
+          if (i + 1 <= n) {
+            nx = substr($0, i + 1, 1)
+            if (nx == "\042" || nx == "\\" || nx == "$" || nx == "\140") { tok = tok nx; i++ }
+            else tok = tok c
+          } else tok = tok c
+        }
+        else if (c == "\042") dq = 0
+        else tok = tok c
+      } else {
+        if (c == "\140") bt = 0; else tok = tok c
+      }
+    }
+    if (tok != "") print tok
+    print "__SEP__"
+  }'
+}
+
+is_wrapper() {
+  case "$1" in sudo|doas|command|time|nice|nohup|env|xargs|timeout|stdbuf) return 0 ;; *) return 1 ;; esac
+}
+
+# 目标分类：0=放行（白名单/临时区）；1=待处理（隔离或拒）；硬否决直接 deny 退出
+classify_target() {
+  local t="$1" norm base
+  norm=$(printf '%s' "$t" | tr '\\' '/')
+  norm=$(printf '%s' "$norm" | tr '[:upper:]' '[:lower:]')
+  while [ "${norm%/}" != "$norm" ]; do norm="${norm%/}"; done
+  case "$norm" in
+    ""|"."|"/"|"~") deny_json "危险命令（P0 删除类）被拦截：rm 目标是空、根目录、当前目录或家目录，禁止执行。" ;;
+    ..|../*|*/..|*/../*) deny_json "危险命令（P0 删除类）被拦截：rm 目标「$t」含上级路径（..），无法安全判定，禁止执行。" ;;
+    *'$'*|*'*'*|*'?'*|*'['*) deny_json "危险命令（P0 删除类）被拦截：rm 目标「$t」含变量或通配符，无法安全隔离，禁止执行。" ;;
+  esac
+  # 临时区：根本身拒，下一层及更深放行
+  case "$norm" in
+    /tmp|/x/temp|x:/temp|c:/windows/temp) deny_json "危险命令（P0 删除类）被拦截：rm 目标是临时区根目录，禁止整目录删除。" ;;
+    /tmp/?*|/x/temp/?*|x:/temp/?*|c:/windows/temp/?*|c:/users/*/appdata/local/temp/?*) return 0 ;;
+  esac
+  # 构建/缓存/输出白名单：末级目录同名即放行
+  base="${norm##*/}"
+  case "$base" in
+    target|node_modules|dist|build|out|classes|logs|package|__pycache__|.pytest_cache|.coverage|.mypy_cache|.venv|venv) return 0 ;;
+    *.pyc) return 0 ;;
+  esac
+  return 1
+}
+
+# 解析为真实路径，且限定"项目内"（PROJ_DIR 前缀）才允许进隔离区
+resolve_in_project() {
+  local t="$1" src pw
+  case "$t" in
+    /*) src="$t" ;;
+    [a-zA-Z]:*) src=$(cygpath -u "$t" 2>/dev/null) || return 1 ;;
+    *) src="$PROJ_DIR/$t" ;;
+  esac
+  [ -e "$src" ] || return 1
+  pw=$(printf '%s' "$PROJ_DIR" | tr '\\' '/')
+  case "$src" in
+    "$pw"/*) printf '%s' "$src"; return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+evaluate_rm_targets() {
+  local -a bad=()
+  local t
+  [ $# -eq 0 ] && deny_json "危险命令（P0 删除类）被拦截：rm 递归删除缺少目标，禁止执行。"
+  for t in "$@"; do
+    classify_target "$t" || bad+=("$t")
+  done
+  [ ${#bad[@]} -eq 0 ] && return 0
+
+  local -a moved=() failed=()
+  local q stamp proj name entry src
+  q=$(qroot_path)
+  for t in "${bad[@]}"; do
+    if ! src=$(resolve_in_project "$t"); then
+      failed+=("$t")
+      continue
+    fi
+    mkdir -p "$q" 2>/dev/null
+    stamp=$(date +%Y%m%d-%H%M%S)
+    proj=$(basename "$PROJ_DIR")
+    name=$(basename "$src")
+    entry="$q/$stamp-$proj-$name"
+    [ -e "$entry" ] && entry="$entry-$$"
+    if mkdir -p "$entry" 2>/dev/null && mv "$src" "$entry/" 2>/dev/null; then
+      printf '原路径: %s\n删除时间: %s\n触发命令: %s\n' "$(cygpath -w "$src" 2>/dev/null || printf '%s' "$src")" "$(date '+%F %T')" "$(printf '%s' "$COMMAND" | tr '\n' ' ')" > "$entry/README.txt" 2>/dev/null
+      moved+=("$entry")
+    else
+      failed+=("$t")
+    fi
+  done
+  [ ${#moved[@]} -gt 0 ] && prune_quarantine
+
+  local msg="危险命令（P0 删除类）被拦截："
+  [ ${#moved[@]} -gt 0 ] && msg="$msg目标「${bad[*]}」不在白名单，已移入隔离区 ${moved[*]}（${GUARD_QUARANTINE_DAYS:-14} 天内可找回）；"
+  [ ${#failed[@]} -gt 0 ] && msg="$msg目标「${failed[*]}」无法隔离（不存在/无权限/非项目内路径），直接拒绝；"
+  msg="$msg原命令未执行。"
+  deny_json "$msg"
+}
+
+scan_command() {
+  local text="$1" inner
+  # 嵌套命令替换（$(...) 与反引号内层）尽力递归扫描
+  while IFS= read -r inner; do
+    [ -n "$inner" ] && scan_command "$inner"
+  done < <(printf '%s\n' "$text" | grep -oE '\$\([^()]*\)|`[^`]*`' 2>/dev/null | sed -E 's/^\$\(([^()]*)\)$/\1/; s/^`([^`]*)`$/\1/')
+
+  local -a toks targets
+  mapfile -t toks < <(tokenize "$text")
+  local i=0 n=${#toks[@]} first="" tok
+  local rm_active=0 rm_flag=0 literal=0 shell_c=0
+  targets=()
+  while [ $i -lt $n ]; do
+    tok="${toks[$i]}"
+    i=$((i+1))
+    if [ "$tok" = "__SEP__" ]; then
+      if [ "$rm_active" = "1" ] && [ "$rm_flag" = "1" ]; then
+        evaluate_rm_targets "${targets[@]}"
+      fi
+      first=""; rm_active=0; rm_flag=0; literal=0; shell_c=0; targets=()
+      continue
+    fi
+    [ -z "$first" ] && first="$tok"
+    if [ "$shell_c" = "1" ]; then
+      # sh -c / bash -c 的内联命令字符串：递归扫描
+      scan_command "$tok"
+      shell_c=0
+      continue
+    fi
+    if [ "$rm_active" = "0" ]; then
+      if [ "$tok" = "sh" ] || [ "$tok" = "bash" ] || [ "$tok" = "zsh" ] || [ "$tok" = "dash" ]; then
+        shell_c=2
+      elif [ "$shell_c" = "2" ] && [ "$tok" = "-c" ]; then
+        shell_c=1
+      elif [ "$tok" = "rm" ] || [ "${tok##*/}" = "rm" ]; then
+        if [ "$first" = "$tok" ] || is_wrapper "$first"; then
+          rm_active=1; rm_flag=0; literal=0
+        fi
+      elif [ "$shell_c" = "2" ] && [ "$tok" != "-c" ]; then
+        shell_c=0
+      fi
+    else
+      if [ "$literal" = "0" ] && [ "$tok" = "--" ]; then
+        literal=1
+      elif [ "$literal" = "0" ] && [[ "$tok" == -* ]]; then
+        [[ "$tok" =~ ^-[a-zA-Z]*[rR][a-zA-Z]*$ ]] && rm_flag=1
+        [ "$tok" = "--recursive" ] && rm_flag=1
+      else
+        targets+=("$tok")
+      fi
+    fi
+  done
+  # 结尾兜底（tokenize 每行补 SEP，这里防多行拼尾）
+  if [ "$rm_active" = "1" ] && [ "$rm_flag" = "1" ]; then
+    evaluate_rm_targets "${targets[@]}"
+  fi
+}
+
+scan_command "$COMMAND"
 if [[ "$STRIPPED" =~ find[[:space:]].*-(delete|-exec|-ok)([[:space:]]|$) ]]; then
   printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"危险命令（P0 删除类）被拦截：find 带 -delete/-exec/-ok 可能批量删除。请改用人工逐条确认的高置信度操作。"}}'
   exit 0
