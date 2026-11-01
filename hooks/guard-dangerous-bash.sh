@@ -83,7 +83,12 @@ STRIPPED=$(printf '%s' "$COMMAND" | awk '
 QROOT_DEFAULT="X:/隔离区"
 # 项目根：优先客户端注入的变量，其次进程 PWD（相对路径与隔离范围都以它为基准）
 PROJ_DIR="${CLAUDE_PROJECT_DIR:-${ZCODE_PROJECT_DIR:-$PWD}}"
+# 项目根统一成 MSYS 形式：rm 目标经 cygpath/解析后是 /f/xxx 形式，项目根若停在
+# F:/xxx 盘符形式，前缀比对永远失配 → 白名单与隔离全部误判"非项目内"
 PROJ_NORM=$(printf '%s' "$PROJ_DIR" | tr '\\' '/')
+case "$PROJ_NORM" in [a-zA-Z]:/*)
+  PROJ_NORM=$(cygpath -u "$PROJ_NORM" 2>/dev/null || printf '%s' "$PROJ_NORM") ;;
+esac
 
 qroot_path() {
   local q="${GUARD_QUARANTINE_DIR:-$QROOT_DEFAULT}"
