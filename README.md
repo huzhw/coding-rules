@@ -2,7 +2,7 @@
 
 ## 📌 九目录同步说明
 
-本仓库作为**内容源**统一向 9 个目录分发（8 个用户级目录 + 本仓库自身 F 盘）：`.claude` / `.zcode` / `.codex` / `.dsh` / `.qoder-cn` / `.minimax` / `.workbuddy` / `.config/opencode`（C 盘，硬链接组 + junction；`.minimax` 为 MiniMax Code，仅规则分发；`.workbuddy` 为规则手工副本；`.config/opencode` 为 OpenCode，2026-10-21 接入，仅规则硬链接组——它自己已发现 `~/.claude/skills`，技能不再挂 junction）。CodeBuddy（`.codebuddy`）已于 2026-10-21 卸载退出同步，不再向其分发规则副本。自研技能 21 个已全部直连 F 仓库；规则文件为 C 盘硬链接组 + F 源。
+本仓库作为**内容源**统一向 9 个目录分发（8 个用户级目录 + 本仓库自身 F 盘）：`.claude` / `.zcode` / `.codex` / `.dsh` / `.qoder-cn` / `.minimax` / `.workbuddy` / `.config/opencode`（C 盘，硬链接组 + junction；`.minimax` 为 MiniMax Code，仅规则分发；`.workbuddy` 为规则手工副本；`.config/opencode` 为 OpenCode，2026-10-21 接入，仅规则硬链接组——它自己已发现 `~/.claude/skills`，技能不再挂 junction）。CodeBuddy（`.codebuddy`）已于 2026-10-21 卸载退出同步，不再向其分发规则副本。自研技能已全部直连 F 仓库；规则文件为 C 盘硬链接组 + F 源。
 
 **完整同步模型、脚本用法、回滚方法见 [SYNC说明.md](SYNC说明.md)**。常用：
 
@@ -16,15 +16,21 @@ powershell -File scripts\sync-rules.ps1 -Check
 ```
 
 ## 相关技能
+
+- [agent-config-sync-check](https://github.com/huzhw/agent-config-sync-check)：八端同步守卫：链接/硬链接/README 同步检查与修复
 - [git-commit](https://github.com/huzhw/git-commit-skill)：Git 提交规范
-- [daily-record-gitlab-md](https://github.com/huzhw/daily-record-gitlab-md-skill)：日报记录 + 工时评估
-- [daily-merge-gitlab-excel](https://github.com/huzhw/daily-merge-gitlab-excel-skill)：日报 Excel 合并
-- [reread-rules](https://github.com/huzhw/reread-rules-skill)：重载 CLAUDE.md / AGENTS.md 规则
+- [daily-record-gitlab-md](https://github.com/huzhw/daily-record-gitlab-md-skill)：日报记录（第一步）
+- [daily-merge-gitlab-excel](https://github.com/huzhw/daily-merge-gitlab-excel-skill)：日报合并（手动兜底，已由日报管家接管，不推荐）
 - [code-check](https://github.com/huzhw/code-check-skill)：增量代码隐患检查
-- [deepseek-harness-settings-curator](https://github.com/huzhw/deepseek-harness-settings-curator)：DSH 模型配置梳理
-- [deepseek-harness-plugin-doctor](https://github.com/huzhw/deepseek-harness-plugin-doctor)：DSH 插件与升级体检医生
-- [agent-config-sync-check](https://github.com/huzhw/agent-config-sync-check)：八端同步守卫（CodeBuddy 2026-10-21 卸载退出、OpenCode 同日接入）：链接/硬链接/README 同步检查与修复
+- [deepseek-harness-plugin-doctor](https://github.com/huzhw/deepseek-harness-plugin-doctor)：DeepSeek Harness 插件与升级体检医生
+- [deepseek-harness-settings-curator](https://github.com/huzhw/deepseek-harness-settings-curator)：DeepSeek Harness 模型配置梳理
+- [reread-rules](https://github.com/huzhw/reread-rules-skill)：重载 CLAUDE.md / AGENTS.md 规则
+- [dev-env-upgrade](https://github.com/huzhw/dev-env-upgrade)：开发环境升级医生：版本体检/最新版查询/安全升级
 - [daily-report-panel](https://github.com/huzhw/daily-report-panel)：日报管家（关联仓库，非 skill，自动合并/导出/发件）
+- [prd](https://github.com/huzhw/prd-skill)：PRD 生成器（一句话需求→结构化需求文档）
+- [ralph](https://github.com/huzhw/ralph-skill)：PRD 转 prd.json（Ralph 自主执行格式）
+- [memory-ai-cleanup](https://github.com/huzhw/memory-ai-cleanup)：memory-ai 记录定期清理：删过期流水、摘索引死链、清 tmp 残留
+- [ssh-transfer](https://github.com/huzhw/ssh-transfer)：服务器传文件走命令行（scp/sftp 流式，字节不进模型上下文）
 
 ---
 
@@ -282,4 +288,4 @@ AI：不安全。cookie 明文传输，密码应该只在登录请求体中传�
 
 MIT
 
-最后修改：2026-11-01
+最后修改：2026-11-02
