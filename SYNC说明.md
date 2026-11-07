@@ -1,8 +1,8 @@
-# 九目录同步说明（coding-rules）
+# 十目录同步说明（coding-rules）
 
-本仓库 `coding-rules` 是整个 AI 编码协作规范与自研技能的**唯一内容源**，统一负责向 9 个目录分发（8 个用户级目录 + 内容源自身）。
+本仓库 `coding-rules` 是整个 AI 编码协作规范与自研技能的**唯一内容源**，统一负责向 10 个目录分发（9 个用户级目录 + 内容源自身）。
 
-**九个目录：**
+**十个目录：**
   1. `C:\Users\Administrator\.claude`（Claude Code）
   2. `C:\Users\Administrator\.zcode`（Zcode）
   3. `C:\Users\Administrator\.codex`（Codex）
@@ -10,8 +10,9 @@
   5. `C:\Users\Administrator\.qoder-cn`（Qoder CN，2026-10-11 由 `.qoder` 国际版换端）
   6. `C:\Users\Administrator\.minimax`（MiniMax Code，2026-10-10 接入，仅规则分发）
   7. `C:\Users\Administrator\.workbuddy`（WorkBuddy，2026-10-11 接入，仅规则手工副本）
-  8. `C:\Users\Administrator\.config\opencode`（OpenCode，2026-10-21 接入，仅规则硬链接组；技能不挂——opencode 自身已发现 `~/.claude/skills`）
-  9. `F:\idea-workspase-skills`（内容源，git 仓库）
+  8. `C:\Users\Administrator\.ds-bot`（DS Bot，2026-11-07 接入，仅规则手工副本：正文走精简版 `ds-bot-精简版.md`，不挂技能）
+  9. `C:\Users\Administrator\.config\opencode`（OpenCode，2026-10-21 接入，仅规则硬链接组；技能不挂——opencode 自身已发现 `~/.claude/skills`）
+  10. `F:\idea-workspase-skills`（内容源，git 仓库）
 
 > **历史注记**：`.codebuddy`（CodeBuddy CN，2026-10-10 接入）已于 2026-10-21 卸载退出同步，本仓库不再向该目录分发规则副本（磁盘上残留的 `rules\core-discipline.md` 不删除、不再管）。
 
@@ -79,7 +80,7 @@ powershell -File scripts\sync-skills.ps1 -Base "C:\Users\Administrator\.zcode\sk
 ## 二、规则文件（CLAUDE.md / AGENTS.md）同步模型
 
 > `coding-rules` 的规则正文源 = **`coding-rules\CLAUDE.md`**（F 盘，参与 git）。
-> C 盘 7 个规则文件 = **单向硬链接组**（同 inode，改任一同步七处），由 push 推入；手工副本只剩 WorkBuddy 一个跟随组（CodeBuddy 端 2026-10-21 卸载退出）。
+> C 盘 7 个规则文件 = **单向硬链接组**（同 inode，改任一同步七处），由 push 推入；手工副本现有两处跟随组：WorkBuddy 用户级记忆、DS Bot 全局规则（CodeBuddy 端 2026-10-21 卸载退出）。
 
 ### 硬链接组（C 盘）
 
@@ -95,9 +96,11 @@ powershell -File scripts\sync-skills.ps1 -Base "C:\Users\Administrator\.zcode\sk
 
 七个文件 **FileID 相同**（同一 inode），正文与 `coding-rules\CLAUDE.md` 完全一致。
 
-**历史注记（2026-10-21）**：CodeBuddy CN 已卸载，该端退出规则同步——`~\.codebuddy\rules\core-discipline.md` 手工副本（frontmatter + F 源全文）不再由 `sync-rules.ps1 -Push` 生成，`RulesCopyDrift` 也不再检查；磁盘上残留的那份不主动删除、不再管。手工副本自此外只剩 WorkBuddy 一处。
+**历史注记（2026-10-21）**：CodeBuddy CN 已卸载，该端退出规则同步——`~\.codebuddy\rules\core-discipline.md` 手工副本（frontmatter + F 源全文）不再由 `sync-rules.ps1 -Push` 生成，`RulesCopyDrift` 也不再检查；磁盘上残留的那份不主动删除、不再管。手工副本自此外只剩 WorkBuddy 与 DS Bot 两处。
 
 WorkBuddy 端也不进组：自定义指令为云端配置、无文件入口（2026-10-11 实证），用户级规则唯一通道 = 用户级记忆 `~\.workbuddy\user-<id>-personal\MEMORY.md` 手工副本（专属头注释 + 剥离头注释的 F 源正文，由 `sync-rules.ps1 -Push` 生成，每会话约 4000 字符上限，`RulesCopyDrift` 检查看管）。
+
+DS Bot 端也不进组：全局规则读 `~\.ds-bot\AGENTS.md`，走手工副本（专属头注释 + `ds-bot-精简版.md` 正文）；该精简版保留全部条目、只去掉「亲爱的架构师」开头那一句，无字数上限，同样由 `sync-rules.ps1 -Push` 生成、`RulesCopyDrift` 看管。
 
 **同步时注意：**
 - 改 `coding-rules\CLAUDE.md` 后，**跑 push 脚本**把内容推给 C 盘组（硬链接无法跨盘自动同步）。
@@ -157,7 +160,7 @@ powershell -File scripts\sync-rules.ps1 -Push
 | 操作 | 怎么做 |
 |---|---|
 | 新增/修改自研技能 | 改 `F:\...\skills\<仓库>` → 跑 `sync-check.ps1 -Fix` 同步各启用端 skills 目录（当前 5 端；旧 `sync-skills.ps1` 已退役存档） |
-| 修改规则正文 | 改 `coding-rules\CLAUDE.md` → **commit/push gitlab** → 跑 `sync-rules.ps1 -Push` 推 C 盘组与手工副本（仅 WorkBuddy 一处） |
+| 修改规则正文 | 改 `coding-rules\CLAUDE.md` → **commit/push gitlab** → 跑 `sync-rules.ps1 -Push` 推 C 盘组与手工副本（WorkBuddy + DS Bot 两处） |
 | 从新机器恢复 | clone 各仓库到 `F:\...\skills\`（各技能独立 git 仓库）→ 跑两类脚本再校验 |
 | 校验全部 | `sync-check.ps1` + `sync-rules.ps1 -Check` |
 
@@ -185,7 +188,7 @@ mklink /H "C:\Users\Administrator\.qoder-cn\AGENTS.md" "C:\Users\Administrator\.
 mklink /H "C:\Users\Administrator\.minimax\AGENTS.md"  "C:\Users\Administrator\.claude\CLAUDE.md"
 mklink /H "C:\Users\Administrator\.config\opencode\AGENTS.md" "C:\Users\Administrator\.claude\CLAUDE.md"
 ```
-> `mklink /H` 建文件硬链接（同卷）。WorkBuddy 不建链接，其手工副本由 `sync-rules.ps1 -Push` 生成（CodeBuddy 端 2026-10-21 卸载退出，该端副本已随之下线）。
+> `mklink /H` 建文件硬链接（同卷）。WorkBuddy 与 DS Bot 不建链接，其手工副本由 `sync-rules.ps1 -Push` 生成（CodeBuddy 端 2026-10-21 卸载退出，该端副本已随之下线）。
 > 实际重建推荐直接用 `sync-check.ps1 -FixHardlink`（哈希全等才重建，分叉拒绝），上面命令仅作原理参照。
 
 ---

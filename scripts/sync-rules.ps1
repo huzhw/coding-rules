@@ -2,26 +2,20 @@
 # sync-rules.ps1 — 全局规则文件同步脚本
 #
 # 作用：把 coding-rules 仓库的规则内容推送到 C 盘的 7 个全局规则文件
-#       （.claude\CLAUDE.md + .codex/.dsh/.zcode/.qoder-cn/.minimax 五处 AGENTS.md；
-#       .minimax 端 = MiniMax Code，2026-10-10 接入，全局规则 = ~/.minimax/AGENTS.md；
-#       .qoder-cn 端 = Qoder CN 国内版，2026-10-11 由 .qoder 换端（国际版壳当日卸载，
-#       国内版 CLI 数据目录实锤 = ~/.qoder-cn）；
-#       .config\opencode 端 = OpenCode，2026-10-21 接入，全局规则 = ~/.config/opencode/AGENTS.md，
-#       该文件不存在时 opencode 会回退吃 ~/.claude/CLAUDE.md，建了它就顶替那条回退、内容同组正文），
-#       并生成/刷新 WorkBuddy 用户级记忆副本
-#       （~\.workbuddy\user-<id>-personal\MEMORY.md = 专属头注释 + workbuddy-精简版.md 正文；
-#       2026-10-11 接入，拷贝端非硬链接；该文件是 WorkBuddy 跨项目记忆，每会话约
-#       4000 字符上限，-Push 总长超 3900 告警）。
-#       历史注记：2026-10-21 CodeBuddy CN 卸载，本脚本不再生成/检查
-#       .codebuddy\rules\core-discipline.md（该端已退出规则同步，磁盘上残留的副本
-#       不删除也不再管；手工副本自此外只剩 WorkBuddy 一处）。
-# 实现：C 盘 7 个文件 = 硬链接组（同 inode，改任一同步七处）。
-#       手工副本是拷贝端不是硬链接（头注释须独立于组内容），
-#       由本脚本 -Push 生成/刷新、agent-config-sync-check 的 RulesCopyDrift 看管。
+#       （.claude\CLAUDE.md + .codex/.dsh/.zcode/.qoder-cn/.minimax 五处 AGENTS.md +
+#       .config\opencode\AGENTS.md；同 inode 硬链接组，改任一同步七处），
+#       再按 agent-config-sync-check\sync-config.json 的 rulesHardlink.manualCopies
+#       逐条刷新「手工副本」（拷贝端非硬链接：专属头注释 + 该条 bodySource 的正文）。
+#       当前副本两条：WorkBuddy 用户级记忆 MEMORY.md（每会话约 4000 字符上限）、
+#       DS Bot 全局规则 ~\.ds-bot\AGENTS.md（精简版正文）。
+#       登记在 manualCopies 里的 F 盘那份是内容源本身，推送时跳过、绝不反向覆盖。
+# 实现：C 盘 7 个文件 = 硬链接组（同 inode）；手工副本由 -Push 生成/刷新、
+#       agent-config-sync-check 的 RulesCopyDrift 看管（-Fix 保留本头注释、重写正文）。
 # 用法：
-#   powershell -File sync-rules.ps1 -Push     # 把 F 仓库内容推送到 C 盘组 + 刷新 WorkBuddy 副本
-#   powershell -File sync-rules.ps1 -Check    # 检查一致性（含 WorkBuddy 副本）
+#   powershell -File sync-rules.ps1 -Push     # 推 F 仓库 -> C 盘组 + 刷新全部手工副本
+#   powershell -File sync-rules.ps1 -Check    # 检查一致性（含手工副本）
 #   powershell -File sync-rules.ps1           # 默认 Check
+# 维护：新增/下线某个拷贝端只改 sync-config.json 的 manualCopies，本脚本无需改动。
 # =====================================================================
 
 param(
@@ -31,8 +25,10 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$F_MAIN = "F:\idea-workspase-skills\coding-rules\CLAUDE.md"
-$CFile  = "C:\Users\Administrator\.claude\CLAUDE.md"
+$F_MAIN     = "F:\idea-workspase-skills\coding-rules\CLAUDE.md"
+$CFG_PATH   = "F:\idea-workspase-skills\agent-config-sync-check\sync-config.json"
+$REPO_ROOT  = "F:\idea-workspase-skills\"
+$CFile      = "C:\Users\Administrator\.claude\CLAUDE.md"
 $Group  = @(
     "C:\Users\Administrator\.claude\CLAUDE.md",
     "C:\Users\Administrator\.codex\AGENTS.md",
@@ -43,21 +39,60 @@ $Group  = @(
     "C:\Users\Administrator\.config\opencode\AGENTS.md"
 )
 
-# WorkBuddy 用户级记忆副本（拷贝端，非硬链接）：专属头注释固定不变，正文 = workbuddy-精简版.md
-# <!-- --> 头注释后的组正文。该文件同时是 WorkBuddy 的跨项目记忆文件，每会话约 4000 字符
-# 上限、超限尾部截断——-Push 时总长 >3900 黄字告警。用户若直改正文会被下次 -Push 覆盖
-# （与 C 盘组同一条红线）；漂移由 agent-config-sync-check 的 RulesCopyDrift 看管（-Fix
-# 保留本头注释、重写正文），副本登记在 sync-config.json 的 rulesHardlink.manualCopies。
-$WB_MEMORY = "C:\Users\Administrator\.workbuddy\user-48bcec2f-1f86-4f6a-a96d-53018280f4a0-personal\MEMORY.md"
-$WB_HEADER = @"
-<!-- 来源与同步说明（勿删）：
-     唯一内容源 = F:\idea-workspase-skills\coding-rules\CLAUDE.md（git 仓库，改动只改那里）
-     → 硬链接组 ~/.codex/AGENTS.md 等 7 份 → 本文件（WorkBuddy 用户级记忆，跨项目、每次会话读取）
-     本文件由 coding-rules\scripts\sync-rules.ps1 -Push 整文件自动覆写，漂移由 agent-config-sync-check
-     的 RulesCopyDrift 看管（-Fix 保留本头注释、重写正文）
-     红线：本文件是规则专用推送端，禁止追加任何内容；跨项目附加记忆写各工作区 .workbuddy/memory/MEMORY.md
-     容量红线：WorkBuddy 每会话约 4000 字符上限，超限尾部会被截断（-Push 在总长 >3900 时告警） -->
-"@
+# 手工副本清单：唯一真源是 sync-config.json（本脚本不再写死任何一端）
+if (-not (Test-Path -LiteralPath $CFG_PATH)) { throw "找不到同步配置: $CFG_PATH" }
+$cfg = Get-Content -LiteralPath $CFG_PATH -Raw -Encoding UTF8 | ConvertFrom-Json
+$Copies = @()
+if ($cfg.rulesHardlink -and $cfg.rulesHardlink.PSObject.Properties['manualCopies']) {
+    $Copies = @($cfg.rulesHardlink.manualCopies | Where-Object { $_ -and $_.path })
+}
+
+# 副本落在 F 仓库里的那条是内容源本身（不是镜像），推送与比对都要跳过
+function Test-RepoSideCopy {
+    param([string]$Path)
+    return $Path.StartsWith($REPO_ROOT, [StringComparison]::OrdinalIgnoreCase)
+}
+
+# 取一条副本的正文源：有 bodySource 用它，缺省回退 F 源；开头 <!-- --> 头注释一律剥掉
+function Get-CopyBody {
+    param([object]$Copy)
+    $src = $F_MAIN
+    if ($Copy.PSObject.Properties['bodySource']) {
+        $bs = [string]$Copy.bodySource
+        if ($bs -and (Test-Path -LiteralPath $bs)) { $src = $bs }
+    }
+    $text = [IO.File]::ReadAllText($src, [Text.Encoding]::UTF8)
+    return [regex]::Replace($text, '(?s)\A\s*<!--.*?-->\s*', '').Trim(), $src
+}
+
+# 副本专属头注释（身份说明 + 容量/红线备注，备注来自配置的 headerNotes）
+function New-CopyHeader {
+    param([object]$Copy, [string]$BodySource)
+    $label = ""
+    if ($Copy.PSObject.Properties['label']) { $label = [string]$Copy.label }
+    if (-not $label) { $label = Split-Path -Leaf (Split-Path -Parent ([string]$Copy.path)) }
+    $lines = @(
+        "<!-- 来源与同步说明（勿删）：",
+        "     唯一内容源 = F:\idea-workspase-skills\coding-rules\CLAUDE.md（git 仓库，改动只改那里）",
+        "     → 硬链接组 ~/.codex/AGENTS.md 等 7 份 → 本文件（$label）",
+        "     正文来源 = $BodySource",
+        "     本文件由 coding-rules\scripts\sync-rules.ps1 -Push 整文件自动覆写，漂移由 agent-config-sync-check",
+        "     的 RulesCopyDrift 看管（-Fix 保留本头注释、重写正文）",
+        "     红线：本文件是规则专用推送端，禁止追加任何内容"
+    )
+    if ($Copy.PSObject.Properties['headerNotes']) {
+        foreach ($n in @($Copy.headerNotes)) {
+            if ($n) { $lines += ("     " + [string]$n) }
+        }
+    }
+    $lines += " -->"
+    return ($lines -join "`r`n")
+}
+
+function Strip-HeaderComment {
+    param([string]$Text)
+    return [regex]::Replace($Text, '(?s)\A\s*<!--.*?-->\s*', '').Trim()
+}
 
 if (-not $Push -and -not $Check) { $Check = $true }
 
@@ -103,26 +138,20 @@ if ($Check) {
     } else {
         Write-Host "[异]  F 仓库与 C 盘组内容不同（跑 -Push 同步）" -ForegroundColor Yellow
     }
-    # WorkBuddy 用户规则副本：剥头注释后比对正文（与 sync-check 口径一致）
-    if (-not (Test-Path -LiteralPath $WB_MEMORY)) {
-        Write-Host "[缺]  $WB_MEMORY（WorkBuddy 用户规则副本，跑 -Push 生成）" -ForegroundColor Red
-    } else {
-        $wbText = [IO.File]::ReadAllText($WB_MEMORY)
-        $wbHead = [regex]::Match($wbText, '(?s)\A\s*<!--.*?-->\s*')
-        if ($wbHead.Success) { $wbText = $wbText.Substring($wbHead.Length) }
-        # 期望正文：优先 workbuddy-精简版.md（WorkBuddy 每会话约 4000 字符上限），缺省回退 F 源
-        $WB_BRIEF = Join-Path (Split-Path -Parent $F_MAIN) "workbuddy-精简版.md"
-        if (Test-Path -LiteralPath $WB_BRIEF) {
-            $wbSrc = [IO.File]::ReadAllText($WB_BRIEF, [Text.Encoding]::UTF8)
-        } else {
-            $wbSrc = (Get-Content -LiteralPath $F_MAIN -Raw -Encoding UTF8)
+    # 手工副本：剥头注释后比对正文（与 sync-check 的 RulesCopyDrift 同口径）
+    foreach ($c in $Copies) {
+        $cp = [string]$c.path
+        if (Test-RepoSideCopy $cp) { continue }
+        if (-not (Test-Path -LiteralPath $cp)) {
+            Write-Host "[缺]  $cp（手工副本，跑 -Push 生成）" -ForegroundColor Red
+            continue
         }
-        $srcHead = [regex]::Match($wbSrc, '(?s)\A\s*<!--.*?-->\s*')
-        if ($srcHead.Success) { $wbSrc = $wbSrc.Substring($srcHead.Length) }
-        if ($wbText.Trim() -eq $wbSrc.Trim()) {
-            Write-Host "[OK]  WorkBuddy 用户规则副本 == workbuddy-精简版.md（正文一致）" -ForegroundColor Green
+        $want, $src = Get-CopyBody $c
+        $have = Strip-HeaderComment ([IO.File]::ReadAllText($cp, [Text.Encoding]::UTF8))
+        if ($have -eq $want) {
+            Write-Host "[OK]  $cp == $src（正文一致）" -ForegroundColor Green
         } else {
-            Write-Host "[异]  WorkBuddy 用户规则副本与 workbuddy-精简版.md 不同（跑 -Push 同步）" -ForegroundColor Yellow
+            Write-Host "[异]  $cp 与 $src 不同（跑 -Push 同步）" -ForegroundColor Yellow
         }
     }
 }
@@ -140,7 +169,7 @@ if ($Push) {
     # 删 tmp 走 .NET API：WorkBuddy 会话删除守卫拦 Remove-Item（SAFE_DELETE_FAIL_CLOSED
     # fail-closed，2026-10-11 实测），.NET API 不经 cmdlet 层可正常删除，两栖（控制台/WorkBuddy）通吃
     [System.IO.File]::Delete($tmp)
-    # 写后自检（2026-10-21 加）：只写底座一个文件，若底座已被"替换写"拆链，
+    # 写后自检：只写底座一个文件，若底座已被"替换写"拆链，
     # 其余组员会留在旧内容上而脚本照样报成功——所以这里回读整个 $Group 做
     # 长度+SHA256 断言，任何一个对不上就明说"组已断"并以 1 退出。
     $baseLen = (Get-Item -LiteralPath $CFile).Length
@@ -158,20 +187,29 @@ if ($Push) {
         Write-Host "        修法：powershell -File F:\idea-workspase-skills\agent-config-sync-check\scripts\sync-check.ps1 -FixHardlink（7 份哈希全等才重建）" -ForegroundColor Yellow
     }
     Write-Host "[推送完成] C 盘组已同步 F 仓库内容" -ForegroundColor Green
-    # WorkBuddy 用户规则副本：整文件重写（专属头注释 + 正文，无 BOM UTF8）。
-    # 总长 >3900 字符告警（WorkBuddy 每会话约 4000 上限，超限尾部截断）
-    $WB_BRIEF = Join-Path (Split-Path -Parent $F_MAIN) "workbuddy-精简版.md"
-    if (Test-Path -LiteralPath $WB_BRIEF) {
-        # 正文 = 精简版（WorkBuddy 每会话约 4000 字符上限，F 源全量正文加头注释必定超限截断）
-        $wbBody = ([IO.File]::ReadAllText($WB_BRIEF, [Text.Encoding]::UTF8)).Trim()
-    } else {
-        # 回退：F 源剥掉开头 <!-- --> 头注释后的组正文
-        $wbBody = [regex]::Replace($content, '(?s)\A\s*<!--.*?-->\s*', '')
-    }
-    $wbFull = $WB_HEADER + "`r`n`r`n" + $wbBody
-    [System.IO.File]::WriteAllText($WB_MEMORY, $wbFull, (New-Object System.Text.UTF8Encoding($false)))
-    Write-Host "[推送完成] WorkBuddy 用户规则副本已生成: $WB_MEMORY" -ForegroundColor Green
-    if ($wbFull.Length -gt 3900) {
-        Write-Host "[警告] WorkBuddy 副本总长 $($wbFull.Length) 字符，超 3900 安全线（每会话约 4000 上限，尾部会被截断），请精简 workbuddy-精简版.md" -ForegroundColor Yellow
+
+    # 手工副本：整文件重写（专属头注释 + 正文，无 BOM UTF8）
+    Write-Host "=== 刷新手工副本（sync-config.json manualCopies）==="
+    foreach ($c in $Copies) {
+        $cp = [string]$c.path
+        if (Test-RepoSideCopy $cp) {
+            Write-Host "[跳过] $cp（内容源，不由本脚本覆写）" -ForegroundColor DarkGray
+            continue
+        }
+        $parent = Split-Path -Parent $cp
+        if (-not (Test-Path -LiteralPath $parent)) {
+            Write-Host "[跳过] $cp（家目录不存在：$parent）" -ForegroundColor Yellow
+            continue
+        }
+        $body, $src = Get-CopyBody $c
+        $full = (New-CopyHeader $c $src) + "`r`n`r`n" + $body
+        [System.IO.File]::WriteAllText($cp, $full, (New-Object System.Text.UTF8Encoding($false)))
+        Write-Host "[推送完成] $cp（正文源 $src）" -ForegroundColor Green
+        if ($c.PSObject.Properties['warnChars']) {
+            $lim = [int]$c.warnChars
+            if ($lim -gt 0 -and $full.Length -gt $lim) {
+                Write-Host "[警告] $cp 总长 $($full.Length) 字符，超 $lim 安全线（每会话上限约 $($lim + 100)，尾部会被截断），请精简其 bodySource" -ForegroundColor Yellow
+            }
+        }
     }
 }
